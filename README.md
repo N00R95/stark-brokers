@@ -14,6 +14,7 @@
 
 # Clone the repository
 git clone git@github.com:N00R95/stark-brokers.git
+# Install dependencies
 cd stark-brokers
 npm install
 # Start development server
