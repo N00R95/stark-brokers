@@ -1,148 +1,266 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { HiHome, HiUserGroup } from 'react-icons/hi';
+import { HiHome, HiUserGroup, HiUserCircle } from 'react-icons/hi';
 import { BiCategory } from 'react-icons/bi';
 import { FaMapMarkedAlt } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo-nav.jpg';
 
 function Navbar({ language, setLanguage }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [showLoginOptions, setShowLoginOptions] = useState(false);
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setIsProfileMenuOpen(false);
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   const navItems = {
     en: [
       { text: 'Home', icon: <HiHome className="text-xl" />, path: '/' },
-      { text: 'Categories', icon: <BiCategory className="text-xl" />, path: '/categories' },
+      { text: 'Properties', icon: <BiCategory className="text-xl" />, path: '/properties/available' },
       { text: 'Map', icon: <FaMapMarkedAlt className="text-xl" />, path: '/map' },
-      { text: 'Customer Service', icon: <HiUserGroup className="text-xl" />, path: '/service' },
+      { text: 'Customer Service', icon: <HiUserGroup className="text-xl" />, path: '/customer-service' },
     ],
     ar: [
       { text: 'الرئيسية', icon: <HiHome className="text-xl" />, path: '/' },
-      { text: 'التصنيفات', icon: <BiCategory className="text-xl" />, path: '/categories' },
+      { text: 'العقارات', icon: <BiCategory className="text-xl" />, path: '/properties/available' },
       { text: 'الخريطة', icon: <FaMapMarkedAlt className="text-xl" />, path: '/map' },
-      { text: 'خدمة العملاء', icon: <HiUserGroup className="text-xl" />, path: '/service' },
+      { text: 'خدمة العملاء', icon: <HiUserGroup className="text-xl" />, path: '/customer-service' },
     ]
   };
 
-  const getInitials = () => {
-    return language === 'en' ? 'AA' : 'أح';
+  const userMenuItems = {
+    en: {
+      renter: [
+        { text: 'My Profile', path: '/renter/profile' },
+        { text: 'My Tours', path: '/renter/tours' },
+        { text: 'My Bookings', path: '/renter/bookings' },
+        { text: 'Saved Properties', path: '/renter/saved' },
+        { text: 'Settings', path: '/settings' },
+        { text: 'Logout', action: handleLogout }
+      ],
+      owner: [
+        { text: 'My Profile', path: '/owner/profile' },
+        { text: 'My Properties', path: '/owner/properties' },
+        { text: 'Add Property', path: '/owner/properties/add' },
+        { text: 'Tour Requests', path: '/owner/requests' },
+        { text: 'Settings', path: '/owner/settings' },
+        { text: 'Logout', action: handleLogout }
+      ]
+    },
+    ar: {
+      renter: [
+        { text: 'ملفي الشخصي', path: '/renter/profile' },
+        { text: 'جولاتي', path: '/renter/tours' },
+        { text: 'حجوزاتي', path: '/renter/bookings' },
+        { text: 'العقارات المحفوظة', path: '/renter/saved' },
+        { text: 'الإعدادات', path: '/settings' },
+        { text: 'تسجيل الخروج', action: handleLogout }
+      ],
+      owner: [
+        { text: 'ملفي الشخصي', path: '/owner/profile' },
+        { text: 'عقاراتي', path: '/owner/properties' },
+        { text: 'إضافة عقار', path: '/owner/properties/add' },
+        { text: 'طلبات الجولات', path: '/owner/requests' },
+        { text: 'الإعدادات', path: '/owner/settings' },
+        { text: 'تسجيل الخروج', action: handleLogout }
+      ]
+    }
+  };
+
+  const handleMenuItemClick = (item) => {
+    if (item.action) {
+      item.action();
+    } else {
+      navigate(item.path);
+      setIsProfileMenuOpen(false);
+    }
+  };
+
+  // Check if user exists and has a valid type before accessing menu items
+  const getUserMenuItems = () => {
+    if (!user || !user.type || !userMenuItems[language][user.type]) {
+      return [];
+    }
+    return userMenuItems[language][user.type];
   };
 
   return (
-    <nav className="bg-white shadow-md relative">
+    <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
-          {/* Mobile Menu Button - adjusted positioning */}
+          {/* Language Toggle - Left */}
+          <div className="flex items-center border rounded-lg overflow-hidden">
+            <button
+              onClick={() => setLanguage('en')}
+              className={`px-3 py-1 ${
+                language === 'en' 
+                  ? 'bg-primary text-white' 
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              } transition-colors`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => setLanguage('ar')}
+              className={`px-3 py-1 ${
+                language === 'ar' 
+                  ? 'bg-primary text-white' 
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              } transition-colors`}
+            >
+              AR
+            </button>
+          </div>
+
+          {/* Navigation Menu - Center */}
+          <div className="hidden md:flex items-center justify-center flex-1 mx-4">
+            {navItems[language].map((item, index) => (
+              <Link
+                key={index}
+                to={item.path}
+                className={`flex items-center gap-2 px-4 py-2 transition-colors ${
+                  location.pathname === item.path
+                    ? 'text-primary font-semibold'
+                    : 'text-gray-700 hover:text-primary'
+                }`}
+              >
+                {item.icon}
+                <span className={language === 'ar' ? 'font-arabic' : ''}>
+                  {item.text}
+                </span>
+              </Link>
+            ))}
+          </div>
+
+          {/* Logo and User - Right */}
+          <div className="flex items-center gap-4">
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  className="flex items-center gap-2 focus:outline-none"
+                >
+                  <HiUserCircle className="w-8 h-8 text-gray-600" />
+                  <span className={`text-sm truncate max-w-[100px] ${language === 'ar' ? 'font-arabic' : ''}`}>
+                    {user.fullName}
+                  </span>
+                </button>
+                {isProfileMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    {getUserMenuItems().map((item, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleMenuItemClick(item)}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        {item.text}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setShowLoginOptions(!showLoginOptions)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover"
+                >
+                  {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
+                </button>
+                
+                {/* Login Options Dropdown */}
+                {showLoginOptions && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <Link
+                      to="/login/renter"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setShowLoginOptions(false)}
+                    >
+                      {language === 'ar' ? 'دخول كمستأجر' : 'Login as Renter'}
+                    </Link>
+                    <Link
+                      to="/login/owner"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setShowLoginOptions(false)}
+                    >
+                      {language === 'ar' ? 'دخول كمالك' : 'Login as Owner'}
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+            <Link to="/">
+              <img src={logo} alt="Logo" className="h-14 md:h-16 w-auto" />
+            </Link>
+          </div>
+
+          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 z-20"
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
           >
             <svg
-              className="w-6 h-6"
+              className="h-6 w-6"
               fill="none"
-              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
               viewBox="0 0 24 24"
+              stroke="currentColor"
             >
               {isMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+                <path d="M6 18L18 6M6 6l12 12" />
               ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
+                <path d="M4 6h16M4 12h16M4 18h16" />
               )}
             </svg>
           </button>
+        </div>
 
-          {/* Language Toggle - adjusted for mobile */}
-          <div className="flex items-center ml-auto md:ml-0 mr-4 md:mr-0">
-            <div className="flex items-center space-x-2 border rounded-lg overflow-hidden">
-              <button
-                onClick={() => setLanguage('en')}
-                className={`px-3 py-1 ${
-                  language === 'en' 
-                    ? 'bg-primary text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
-                } transition-colors`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => setLanguage('ar')}
-                className={`px-3 py-1 ${
-                  language === 'ar' 
-                    ? 'bg-primary text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
-                } transition-colors`}
-              >
-                AR
-              </button>
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden absolute left-0 right-0 top-full bg-white shadow-lg z-50">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {navItems[language].map((item, index) => (
+                <Link
+                  key={index}
+                  to={item.path}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium ${
+                    location.pathname === item.path
+                      ? 'bg-primary text-white'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.icon}
+                  <span className={language === 'ar' ? 'font-arabic' : ''}>
+                    {item.text}
+                  </span>
+                </Link>
+              ))}
             </div>
           </div>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navItems[language].map((item, index) => (
-              <a
-                key={index}
-                href={item.path}
-                className="flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
-              >
-                {item.icon}
-                <span className={`${language === 'ar' ? 'font-arabic' : ''}`}>
-                  {item.text}
-                </span>
-              </a>
-            ))}
-          </div>
-
-          {/* Logo */}
-          <a href="/" className="flex-shrink-0">
-            <img 
-              src={logo} 
-              alt="Logo" 
-              className="h-14 md:h-16 w-auto"
-            />
-          </a>
-        </div>
-
-        {/* Mobile Menu - adjusted positioning */}
-        <div
-          className={`${
-            isMenuOpen ? 'block' : 'hidden'
-          } md:hidden absolute left-0 right-0 top-full bg-white shadow-lg z-50`}
-        >
-          <div className="px-4 py-3 space-y-4">
-            {/* Mobile Navigation Links */}
-            {navItems[language].map((item, index) => (
-              <a
-                key={index}
-                href={item.path}
-                className="flex items-center gap-3 py-2 text-gray-700 hover:text-primary transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.icon}
-                <span className={`${language === 'ar' ? 'font-arabic' : ''}`}>
-                  {item.text}
-                </span>
-              </a>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </nav>
   );
 }
 
 Navbar.propTypes = {
-  language: PropTypes.oneOf(['en', 'ar']).isRequired,
-  setLanguage: PropTypes.func.isRequired
+  language: PropTypes.string.isRequired,
+  setLanguage: PropTypes.func.isRequired,
 };
 
 export default Navbar;

@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import PartnerForm from './PartnerForm'
+import { useNavigate } from 'react-router-dom'
 import pic1 from '../assets/pic1.jpg'
 
 export default function Partners({ language }) {
-    const [showForm, setShowForm] = useState(false)
-    const [formType, setFormType] = useState(null)
+    const navigate = useNavigate()
 
     const content = {
         en: {
@@ -24,13 +23,7 @@ export default function Partners({ language }) {
     const t = content[language]
 
     const handleButtonClick = (type) => {
-        setFormType(type)
-        setShowForm(true)
-    }
-
-    const handleClose = () => {
-        setShowForm(false)
-        setFormType(null)
+        navigate(`/register/${type}`)
     }
 
     return (
@@ -87,14 +80,6 @@ export default function Partners({ language }) {
                         </div>
                     </div>
                 </div>
-
-                {showForm && (
-                    <PartnerForm 
-                        language={language}
-                        type={formType}
-                        onClose={handleClose}
-                    />
-                )}
             </div>
         </section>
     )
