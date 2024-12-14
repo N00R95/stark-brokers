@@ -35,7 +35,6 @@ npm run dev
 - 🌐 **Bilingual Support** (AR/EN)
 - 📱 **Fully Responsive Design**
 - 🏠 **Property Listings**
-- 🤝 **Partners Section**
 - 🎨 **Modern UI/UX**
 
 ---
