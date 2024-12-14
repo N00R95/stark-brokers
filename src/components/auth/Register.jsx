@@ -1,13 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext'
 import { authAPI } from '../../services/api'
 import { formatPhoneNumber, validateSaudiPhone } from '../../utils/phoneUtils'
 
 export default function Register({ language, userType }) {
-  const { register, error: authError } = useAuth()
-  const navigate = useNavigate()
-  const [step, setStep] = useState('register') // 'register' | 'otp'
+  const [step, setStep] = useState('register') // 'register' or 'otp'
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -18,9 +15,10 @@ export default function Register({ language, userType }) {
     type: userType
   })
   const [otp, setOtp] = useState('')
-  const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  
+  const navigate = useNavigate()
 
   const content = {
     en: {
@@ -85,7 +83,7 @@ export default function Register({ language, userType }) {
         phoneInvalid: 'يرجى إدخال رقم هاتف سعودي صحيح',
         addressRequired: 'العنوان مطلوب',
         businessNameRequired: 'اسم الشركة مطلوب للملاك',
-        businessLicenseRequired: 'رقم الرخصة التجارية مطلوب للملاك',
+        businessLicenseRequired: '��قم الرخصة التجارية مطلوب للملاك',
         phoneExists: 'رقم الهاتف مسجل بالفعل'
       },
       placeholders: {
@@ -102,27 +100,32 @@ export default function Register({ language, userType }) {
   const t = content[language]
 
   const validateForm = () => {
-    // Basic required fields validation
-    if (!formData.full_name?.trim() || !formData.email?.trim() || !formData.phone?.trim() || !formData.address?.trim()) {
-      setError(language === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required');
+    if (!formData.full_name?.trim()) {
+      setError(t.validationErrors.fullNameRequired);
       return false;
     }
-
-    // Email validation
+    if (!formData.email?.trim()) {
+      setError(t.validationErrors.emailRequired);
+      return false;
+    }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError(t.validationErrors.emailInvalid);
       return false;
     }
-
-    // Phone validation
+    if (!formData.phone?.trim()) {
+      setError(t.validationErrors.phoneRequired);
+      return false;
+    }
     const formattedPhone = formatPhoneNumber(formData.phone);
     if (!validateSaudiPhone(formattedPhone)) {
       setError(t.validationErrors.phoneInvalid);
       return false;
     }
-
-    // Owner-specific validation
+    if (!formData.address?.trim()) {
+      setError(t.validationErrors.addressRequired);
+      return false;
+    }
     if (userType === 'owner') {
       if (!formData.business_name?.trim()) {
         setError(t.validationErrors.businessNameRequired);
@@ -133,9 +136,20 @@ export default function Register({ language, userType }) {
         return false;
       }
     }
-
     return true;
   };
+
+  const validateOtp = () => {
+    if (!otp) {
+      setError(t.otpRequired)
+      return false
+    }
+    if (otp.length !== 6) {
+      setError(t.otpInvalid)
+      return false
+    }
+    return true
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -146,7 +160,7 @@ export default function Register({ language, userType }) {
     setIsLoading(true);
     try {
       const formattedPhone = formatPhoneNumber(formData.phone);
-
+      
       const registrationData = {
         ...formData,
         phone: formattedPhone,
@@ -162,21 +176,16 @@ export default function Register({ language, userType }) {
       const response = await authAPI.register(registrationData);
 
       if (response.success) {
+        setStep('otp');
+        // Store data for OTP verification
         localStorage.setItem('auth_phone', formattedPhone);
         localStorage.setItem('auth_type', userType);
-        setStep('otp');
       } else {
-        setError(response.message || 'Registration failed');
+        throw new Error(response.message || 'Registration failed');
       }
     } catch (error) {
       console.error('❌ Registration Error:', error);
-
-      if (error.errors && Array.isArray(error.errors)) {
-        const errorMessages = error.errors.map(err => err.messages).join('\n');
-        setError(errorMessages || error.message || 'Registration failed');
-      } else {
-        setError(error.message || 'Registration failed');
-      }
+      setError(error.message || 'Registration failed');
     } finally {
       setIsLoading(false);
     }
@@ -185,58 +194,49 @@ export default function Register({ language, userType }) {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
 
+    if (!validateOtp()) return;
+
+    setIsLoading(true);
     try {
       const storedPhone = localStorage.getItem('auth_phone');
       const storedType = localStorage.getItem('auth_type');
 
-      console.log('🔄 Sending OTP Verification:', {
-        otp,
+      const verificationData = {
+        otp: otp,
         phone: storedPhone,
         type: storedType
-      });
+      };
 
-      const response = await authAPI.verifyOTP({
-        otp,
-        phone: storedPhone,
-        type: storedType
-      });
+      console.log('🔄 Sending OTP Verification:', verificationData);
 
-      if (response.success && response.data?.token) {
+      const response = await authAPI.verifyOTP(verificationData);
+
+      if (response.success) {
+        // Clean up temporary storage
+        localStorage.removeItem('auth_phone');
+        localStorage.removeItem('auth_type');
+        
+        // Store token and user data
         localStorage.setItem('token', response.data.token);
-
         const userResponse = await authAPI.getUserProfile();
         if (userResponse.success && userResponse.data) {
           localStorage.setItem('user', JSON.stringify(userResponse.data));
         }
-
-        setIsSubmitted(true);
-
-        setTimeout(() => {
-          const dashboardPath = storedType === 'renter' ? '/renter/dashboard' : '/owner/dashboard';
-          navigate(dashboardPath);
-        }, 2000);
+        
+        // Navigate to appropriate dashboard
+        const redirectPath = `/${userType}/profile`;
+        navigate(redirectPath);
       } else {
-        setError(response.message || 'OTP verification failed');
+        throw new Error(response.message || 'Verification failed');
       }
     } catch (error) {
       console.error('❌ OTP Verification Error:', error);
-      setError(error.message || 'OTP verification failed');
+      setError(error.message || 'Verification failed');
     } finally {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    // Cleanup function
-    return () => {
-      if (step === 'register') {
-        localStorage.removeItem('auth_phone');
-        localStorage.removeItem('auth_type');
-      }
-    };
-  }, [step]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -249,132 +249,121 @@ export default function Register({ language, userType }) {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {isSubmitted ? (
-            <div className="text-center py-8">
-              <div className="mb-4">
-                <svg className="mx-auto h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className={`text-xl font-bold mb-4 ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {t.successMessage}
-              </h3>
+          {error && (
+            <div className="mb-4 p-2 bg-red-50 text-red-500 text-sm rounded">
+              {error}
             </div>
-          ) : (
-            <>
-              {error && (
-                <div className="mb-4 p-2 bg-red-50 text-red-500 text-sm rounded">
-                  {error}
+          )}
+
+          <form onSubmit={step === 'register' ? handleSubmit : handleVerifyOtp} className="space-y-6">
+            {step === 'register' ? (
+              <>
+                <div>
+                  <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
+                    {t.name} *
+                  </label>
+                  <input
+                    id="full_name"
+                    type="text"
+                    required
+                    placeholder={t.placeholders.name}
+                    className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  />
                 </div>
-              )}
 
-              {step === 'register' ? (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div>
-                    <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
-                      {t.name} *
-                    </label>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                    {t.email} *
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    placeholder={t.placeholders.email}
+                    className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                    {t.phone} *
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">+966</span>
+                    </div>
                     <input
-                      id="full_name"
-                      type="text"
+                      id="phone"
+                      type="tel"
                       required
-                      placeholder={t.placeholders.name}
-                      className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
-                      value={formData.full_name}
-                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      placeholder={t.placeholders.phone}
+                      className="pl-16 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
+                      value={formData.phone.replace(/^\+966/, '')}
+                      onChange={(e) => {
+                        const input = e.target.value.replace(/\D/g, '');
+                        const phone = input.length > 0 ? `+966${input}` : '';
+                        setFormData({ ...formData, phone });
+                      }}
+                      maxLength="9"
+                      dir="ltr"
                     />
                   </div>
+                </div>
 
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                      {t.email} *
-                    </label>
-                    <input
-                      id="email"
-                      type="email"
-                      required
-                      placeholder={t.placeholders.email}
-                      className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    />
-                  </div>
+                <div>
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                    {t.address} *
+                  </label>
+                  <input
+                    id="address"
+                    type="text"
+                    required
+                    placeholder={t.placeholders.address}
+                    className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
 
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                      {t.phone} *
-                    </label>
-                    <div className="mt-1 relative rounded-md shadow-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 sm:text-sm">+966</span>
-                      </div>
+                {userType === 'owner' && (
+                  <>
+                    <div>
+                      <label htmlFor="business_name" className="block text-sm font-medium text-gray-700">
+                        {t.businessName} *
+                      </label>
                       <input
-                        id="phone"
-                        type="tel"
+                        id="business_name"
+                        type="text"
                         required
-                        placeholder={t.placeholders.phone}
-                        className="pl-16 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
-                        value={formData.phone.replace(/^\+966/, '')}
-                        onChange={(e) => {
-                          const input = e.target.value.replace(/\D/g, '');
-                          const phone = input.length > 0 ? `+966${input}` : '';
-                          setFormData({ ...formData, phone });
-                        }}
-                        maxLength="9"
-                        dir="ltr"
+                        placeholder={t.placeholders.businessName}
+                        className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
+                        value={formData.business_name}
+                        onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                      {t.address} *
-                    </label>
-                    <input
-                      id="address"
-                      type="text"
-                      required
-                      placeholder={t.placeholders.address}
-                      className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    />
-                  </div>
+                    <div>
+                      <label htmlFor="business_license" className="block text-sm font-medium text-gray-700">
+                        {t.businessLicense} *
+                      </label>
+                      <input
+                        id="business_license"
+                        type="text"
+                        required
+                        placeholder={t.placeholders.businessLicense}
+                        className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
+                        value={formData.business_license}
+                        onChange={(e) => setFormData({ ...formData, business_license: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
 
-                  {userType === 'owner' && (
-                    <>
-                      <div>
-                        <label htmlFor="business_name" className="block text-sm font-medium text-gray-700">
-                          {t.businessName} *
-                        </label>
-                        <input
-                          id="business_name"
-                          type="text"
-                          required
-                          placeholder={t.placeholders.businessName}
-                          className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
-                          value={formData.business_name}
-                          onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
-                        />
-                      </div>
-
-                      <div>
-                        <label htmlFor="business_license" className="block text-sm font-medium text-gray-700">
-                          {t.businessLicense} *
-                        </label>
-                        <input
-                          id="business_license"
-                          type="text"
-                          required
-                          placeholder={t.placeholders.businessLicense}
-                          className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
-                          value={formData.business_license}
-                          onChange={(e) => setFormData({ ...formData, business_license: e.target.value })}
-                        />
-                      </div>
-                    </>
-                  )}
-
+                <div>
                   <button
                     type="submit"
                     disabled={isLoading}
@@ -382,49 +371,49 @@ export default function Register({ language, userType }) {
                   >
                     {isLoading ? '...' : t.submit}
                   </button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyOtp} className="space-y-4">
-                  <p className={`text-sm text-gray-600 mb-4 ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {t.otpMessage}
-                  </p>
-                  <input
-                    type="text"
-                    placeholder={t.otpPlaceholder}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    maxLength={6}
-                  />
-                  <button
-                    type="submit"
-                    className="w-full bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-hover transition-colors duration-200"
-                  >
-                    {t.verifyButton}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStep('register')}
-                    className="w-full text-gray-600 text-sm hover:text-gray-900"
-                  >
-                    {t.resendOtp}
-                  </button>
-                </form>
-              )}
-
-              <div className="mt-6 text-center">
-                <Link
-                  to={`/login/${userType}`}
-                  className="text-sm font-medium text-primary hover:text-primary-hover"
+                </div>
+              </>
+            ) : (
+              <div>
+                <p className={`text-sm text-gray-600 mb-4 ${language === 'ar' ? 'font-arabic' : ''}`}>
+                  {t.otpMessage}
+                </p>
+                <input
+                  type="text"
+                  placeholder={t.otpPlaceholder}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary mb-4"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  maxLength={6}
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-hover transition-colors duration-200 mb-4"
                 >
-                  {t.loginLink}
-                </Link>
+                  {t.verifyButton}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep('register')}
+                  className="w-full text-gray-600 text-sm hover:text-gray-900"
+                >
+                  {t.resendOtp}
+                </button>
               </div>
-            </>
-          )}
+            )}
+
+            <div className="mt-6 text-center">
+              <Link
+                to={`/login/${userType}`}
+                className="text-sm font-medium text-primary hover:text-primary-hover"
+              >
+                {t.loginLink}
+              </Link>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   )
-} 
+}
