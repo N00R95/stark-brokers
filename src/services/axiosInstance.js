@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-// Remove /api/v1 from base URL since we'll include it in the endpoints
+// Base URL configuration
 const API_URL = import.meta.env.VITE_API_URL || 'https://starkbrokers.com';
 
 const axiosInstance = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/api/v1`, // Add /api/v1 to base URL to match API endpoints
   headers: {
     'Accept': 'application/json',
     'Content-Type': 'application/json'
@@ -23,7 +23,7 @@ axiosInstance.interceptors.request.use(
         method: config.method?.toUpperCase(),
         hasToken: true
       });
-      config.headers.Authorization = token;
+      config.headers.Authorization = `Bearer ${token}`; // Add Bearer prefix to match API expectations
     }
 
     return config;
