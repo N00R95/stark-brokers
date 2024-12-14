@@ -99,30 +99,56 @@ const propertyAPI = {
   // Update existing property/unit
   updateProperty: async (id, propertyData) => {
     try {
+      console.log('Updating property:', id, 'with data:', propertyData);
+      
       const formData = new FormData();
       
-      Object.keys(propertyData).forEach(key => {
-        if (key === 'image') {
-          propertyData[key].forEach(image => {
-            formData.append('image[]', image);
-          });
-        } else if (key === 'features') {
-          propertyData[key].forEach(feature => {
-            formData.append('features[]', feature);
-          });
-        } else {
-          formData.append(key, propertyData[key]);
-        }
-      });
+      // Add fields only if they exist (optional fields)
+      if (propertyData.title) formData.append('title', propertyData.title.trim());
+      if (propertyData.description) formData.append('description', propertyData.description.trim());
+      if (propertyData.type) formData.append('type', propertyData.type);
+      if (propertyData.price) formData.append('price', propertyData.price);
+      if (propertyData.area) formData.append('area', propertyData.area);
+      if (propertyData.address) formData.append('address', propertyData.address.trim());
+      if (propertyData.number_bedroom !== undefined) {
+        formData.append('number_bedroom', propertyData.number_bedroom);
+      }
+      if (propertyData.number_bathroom !== undefined) {
+        formData.append('number_bathroom', propertyData.number_bathroom);
+      }
 
+      // Add features if they exist
+      if (Array.isArray(propertyData.features) && propertyData.features.length > 0) {
+        propertyData.features.forEach(featureId => {
+          formData.append('features[]', featureId);
+        });
+      }
+
+      // Add new images if they exist
+      if (Array.isArray(propertyData.image) && propertyData.image.length > 0) {
+        propertyData.image.forEach(image => {
+          if (image instanceof File) {
+            formData.append('image[]', image);
+          }
+        });
+      }
+
+      // Debug log FormData
+      for (let pair of formData.entries()) {
+        console.log('FormData:', pair[0], pair[1]);
+      }
+
+      // Use POST method directly without method override
       const response = await axiosInstance.post(`/units/update/${id}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      console.error('Update property error:', error.response?.data);
+      throw error.response?.data || error;
     }
   },
 

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { FiEdit2, FiTrash2, FiEye } from 'react-icons/fi'
 import { propertyAPI } from '../../services/api'
 
-const PropertyCard = ({ property, onDelete, onStatusUpdate }) => {
+const PropertyCard = ({ property, onDelete, onStatusUpdate, translations }) => {
+  const navigate = useNavigate();
   const statusColor = {
     pending: 'bg-yellow-100 text-yellow-800',
     accepted: 'bg-green-100 text-green-800',
@@ -11,6 +12,10 @@ const PropertyCard = ({ property, onDelete, onStatusUpdate }) => {
   };
 
   if (!property) return null;
+
+  const handleEdit = () => {
+    navigate(`/owner/properties/edit/${property.id}`);
+  };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -86,21 +91,21 @@ const PropertyCard = ({ property, onDelete, onStatusUpdate }) => {
           <button
             onClick={() => navigate(`/properties/${property.id}`)}
             className="p-2 text-gray-600 hover:text-gray-900"
-            title="View"
+            title={translations.view}
           >
             <FiEye />
           </button>
           <button
-            onClick={() => navigate(`/owner/properties/edit/${property.id}`)}
+            onClick={handleEdit}
             className="p-2 text-blue-600 hover:text-blue-800"
-            title="Edit"
+            title={translations.edit}
           >
             <FiEdit2 />
           </button>
           <button
             onClick={() => onDelete(property.id)}
             className="p-2 text-red-600 hover:text-red-800"
-            title="Delete"
+            title={translations.delete}
           >
             <FiTrash2 />
           </button>
@@ -292,6 +297,7 @@ export default function MyProperties({ language }) {
               property={property}
               onDelete={handleDelete}
               onStatusUpdate={handleBookingStatusUpdate}
+              translations={t}
             />
           ))}
         </div>

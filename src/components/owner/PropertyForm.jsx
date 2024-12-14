@@ -240,7 +240,7 @@ export default function PropertyForm({ language }) {
       console.error('Failed to fetch property:', error)
       setSubmitStatus({
         success: false,
-        message: language === 'ar' ? 'فشل في تحميل بيانات العقار' : 'Failed to load property data'
+        message: language === 'ar' ? 'فشل في تحميل بيانات الع��ار' : 'Failed to load property data'
       })
     } finally {
       setLoading(false)
@@ -253,17 +253,20 @@ export default function PropertyForm({ language }) {
     setLoading(true);
 
     try {
-      // Validate required fields according to API documentation
+      // Validate required fields based on whether it's create or update
       const validationErrors = {};
       
-      if (!formData.title?.trim()) validationErrors.title = 'The title field is required.';
-      if (!formData.price) validationErrors.price = 'The price field is required.';
-      if (!formData.type) validationErrors.type = 'The type field is required.';
-      if (!formData.area) validationErrors.area = 'The area field is required.';
-      if (!formData.number_bedroom) validationErrors.number_bedroom = 'The number of bedrooms is required.';
-      if (!formData.number_bathroom) validationErrors.number_bathroom = 'The number of bathrooms is required.';
-      if (!formData.address?.trim()) validationErrors.address = 'The address field is required.';
-      if (!formData.image?.length) validationErrors.image = 'At least one image is required.';
+      // For create, all fields are required
+      if (!id) {
+        if (!formData.title?.trim()) validationErrors.title = 'The title field is required.';
+        if (!formData.price) validationErrors.price = 'The price field is required.';
+        if (!formData.type) validationErrors.type = 'The type field is required.';
+        if (!formData.area) validationErrors.area = 'The area field is required.';
+        if (!formData.number_bedroom) validationErrors.number_bedroom = 'The number of bedrooms is required.';
+        if (!formData.number_bathroom) validationErrors.number_bathroom = 'The number of bathrooms is required.';
+        if (!formData.address?.trim()) validationErrors.address = 'The address field is required.';
+        if (!formData.image?.length) validationErrors.image = 'At least one image is required.';
+      }
 
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
@@ -271,35 +274,39 @@ export default function PropertyForm({ language }) {
         return;
       }
 
-      // Prepare data according to API requirements
+      // Prepare data
       const submitData = {
         title: formData.title.trim(),
-        price: parseFloat(formData.price),
-        type: formData.type,
-        area: parseFloat(formData.area),
-        number_bedroom: parseInt(formData.number_bedroom),
-        number_bathroom: parseInt(formData.number_bathroom),
-        address: formData.address.trim(),
         description: formData.description?.trim() || '',
+        type: formData.type,
+        price: parseFloat(formData.price),
+        area: parseFloat(formData.area),
+        number_bedroom: parseInt(formData.number_bedroom) || 0,
+        number_bathroom: parseInt(formData.number_bathroom) || 0,
+        address: formData.address.trim(),
         features: formData.features,
         image: formData.image
       };
 
       // Debug log
-      console.log('Submitting data:', submitData);
+      console.log(`${id ? 'Updating' : 'Creating'} property:`, submitData);
 
-      const response = await propertyAPI.createProperty(submitData);
+      const response = id 
+        ? await propertyAPI.updateProperty(id, submitData)
+        : await propertyAPI.createProperty(submitData);
 
       if (response.success) {
         setSubmitStatus({
           success: true,
-          message: language === 'ar' ? 'تم إضافة العقار بنجاح' : 'Property added successfully'
+          message: language === 'ar' 
+            ? (id ? 'تم تحديث العقار بنجاح' : 'تم إضافة العقار بنجاح')
+            : (id ? 'Property updated successfully' : 'Property added successfully')
         });
         
         setTimeout(() => navigate('/owner/properties'), 2000);
       }
     } catch (error) {
-      console.error('Submission error:', error);
+      console.error('Form submission error:', error);
       
       if (error.error) {
         const apiErrors = {};
@@ -311,7 +318,9 @@ export default function PropertyForm({ language }) {
 
       setSubmitStatus({
         success: false,
-        message: language === 'ar' ? 'حدث خطأ أثناء حفظ العقار' : 'Failed to save property'
+        message: language === 'ar' 
+          ? (id ? 'حدث خطأ أثناء تحديث العقار' : 'حدث خطأ أثناء حفظ العقار')
+          : (id ? 'Failed to update property' : 'Failed to save property')
       });
     } finally {
       setLoading(false);
