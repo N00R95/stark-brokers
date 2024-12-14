@@ -1,11 +1,44 @@
 import { useState } from 'react'
-import { FiCheck } from 'react-icons/fi'
+import { FiCheck, FiX } from 'react-icons/fi'
 
-export default function PropertyFilters({ language, activeFilters, onFilterChange }) {
-    const [showCustomRange, setShowCustomRange] = useState(false)
-    const [customPrice, setCustomPrice] = useState({
-        min: '',
-        max: ''
+// First, let's create a mapping of feature names to their IDs
+const FEATURE_IDS = {
+    parking: 1,
+    swimming_pool: 2,
+    gym: 3,
+    security: 4,
+    elevator: 5,
+    garden: 6,
+    central_ac: 7,
+    balcony: 8,
+    maid_room: 9,
+    storage: 10,
+    kitchen_appliances: 11,
+    internet: 12,
+    satellite: 13,
+    intercom: 14,
+    maintenance: 15,
+    mosque: 16,
+    shopping: 17,
+    schools: 18,
+    pets_allowed: 19,
+    sea_view: 20,
+    city_view: 21,
+    garden_view: 22,
+    street_view: 23,
+    mall_view: 24
+};
+
+export default function PropertyFilters({ language, activeFilters = {}, onFilterChange }) {
+    const [localFilters, setLocalFilters] = useState({
+        type: activeFilters.type || '',
+        price_min: activeFilters.price_min || '',
+        price_max: activeFilters.price_max || '',
+        area_min: activeFilters.area_min || '',
+        area_max: activeFilters.area_max || '',
+        bedrooms: activeFilters.bedrooms || '',
+        features: activeFilters.features || [],
+        location: activeFilters.location || ''
     })
 
     const content = {
@@ -87,6 +120,9 @@ export default function PropertyFilters({ language, activeFilters, onFilterChang
                 '500-1000': '500 - 1,000 m²',
                 '1000': 'Above 1,000 m²'
             },
+            minArea: 'Min Area',
+            maxArea: 'Max Area',
+            sqm: 'm²'
         },
         ar: {
             propertyType: 'نوع العقار',
@@ -166,35 +202,65 @@ export default function PropertyFilters({ language, activeFilters, onFilterChang
                 '500-1000': '500 - 1,000 م²',
                 '1000': 'أكثر من 1,000 م²'
             },
+            minArea: 'الحد الأدنى للمساحة',
+            maxArea: 'الحد الأقصى للمساحة',
+            sqm: 'م²'
         }
     }
 
     const t = content[language]
 
-    const handleAmenityToggle = (amenity) => {
-        const newAmenities = activeFilters.amenities.includes(amenity)
-            ? activeFilters.amenities.filter(a => a !== amenity)
-            : [...activeFilters.amenities, amenity]
+    const handleLocalChange = (key, value) => {
+        setLocalFilters(prev => ({
+            ...prev,
+            [key]: value
+        }));
+    };
+
+    const handleApplyFilters = () => {
+        const apiFilters = {
+            ...localFilters,
+            price_min: localFilters.price_min ? parseFloat(localFilters.price_min) : '',
+            price_max: localFilters.price_max ? parseFloat(localFilters.price_max) : '',
+            area_min: localFilters.area_min ? parseFloat(localFilters.area_min) : '',
+            area_max: localFilters.area_max ? parseFloat(localFilters.area_max) : '',
+            bedrooms: localFilters.bedrooms ? parseInt(localFilters.bedrooms) : ''
+        };
+
+        Object.keys(apiFilters).forEach(key => {
+            if (apiFilters[key] === '' || apiFilters[key] === null || apiFilters[key] === undefined) {
+                delete apiFilters[key];
+            }
+        });
+
+        onFilterChange(apiFilters);
+    };
+
+    const handleFeatureToggle = (featureKey) => {
+        const featureId = FEATURE_IDS[featureKey];
+        if (!featureId) return; // Skip if ID not found
         
-        onFilterChange({ amenities: newAmenities })
-    }
+        const newFeatures = localFilters.features.includes(featureId)
+            ? localFilters.features.filter(id => id !== featureId)
+            : [...localFilters.features, featureId];
+        
+        handleLocalChange('features', newFeatures);
+    };
 
     const resetFilters = () => {
-        onFilterChange({
-            type: 'all',
-            priceRange: 'all',
-            bedrooms: 'all',
-            amenities: [],
-            location: 'all'
-        })
-    }
-
-    const handleCustomPriceChange = () => {
-        const range = customPrice.max 
-            ? `${customPrice.min}-${customPrice.max}`
-            : `${customPrice.min}`
-        onFilterChange({ priceRange: range })
-    }
+        const emptyFilters = {
+            type: '',
+            price_min: '',
+            price_max: '',
+            area_min: '',
+            area_max: '',
+            bedrooms: '',
+            features: [],
+            location: ''
+        };
+        setLocalFilters(emptyFilters);
+        onFilterChange(emptyFilters);
+    };
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md">
@@ -207,11 +273,12 @@ export default function PropertyFilters({ language, activeFilters, onFilterChang
                         {t.propertyType}
                     </h3>
                     <select
-                        value={activeFilters.type}
-                        onChange={(e) => onFilterChange({ type: e.target.value })}
+                        value={localFilters.type}
+                        onChange={(e) => handleLocalChange('type', e.target.value)}
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
                     >
-                        {Object.entries(t.types).map(([value, label]) => (
+                        <option value="">{t.types.all}</option>
+                        {Object.entries(t.types).filter(([key]) => key !== 'all').map(([value, label]) => (
                             <option key={value} value={value}>
                                 {label}
                             </option>
@@ -220,83 +287,53 @@ export default function PropertyFilters({ language, activeFilters, onFilterChang
                 </div>
 
                 {/* Price Range */}
-                <div className="space-y-3">
-                    <h3 className={`text-lg font-semibold ${
+                <div>
+                    <h3 className={`text-lg font-semibold mb-3 ${
                         language === 'ar' ? 'font-arabic' : ''
                     }`}>
                         {t.priceRange}
                     </h3>
-                    
-                    {!showCustomRange ? (
-                        <>
-                            <select
-                                value={activeFilters.priceRange}
-                                onChange={(e) => {
-                                    if (e.target.value === 'custom') {
-                                        setShowCustomRange(true)
-                                    } else {
-                                        onFilterChange({ priceRange: e.target.value })
-                                    }
-                                }}
-                                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
-                            >
-                                {Object.entries(t.priceRanges).map(([value, label]) => (
-                                    <option key={value} value={value}>
-                                        {label}
-                                    </option>
-                                ))}
-                                <option value="custom">{t.customRange}</option>
-                            </select>
-                        </>
-                    ) : (
-                        <div className="space-y-2">
-                            <div className="flex gap-2">
-                                <div className="flex-1">
-                                    <input
-                                        type="number"
-                                        placeholder={t.minPrice}
-                                        value={customPrice.min}
-                                        onChange={(e) => setCustomPrice(prev => ({
-                                            ...prev,
-                                            min: e.target.value
-                                        }))}
-                                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
-                                    />
-                                </div>
-                                <div className="flex-1">
-                                    <input
-                                        type="number"
-                                        placeholder={t.maxPrice}
-                                        value={customPrice.max}
-                                        onChange={(e) => setCustomPrice(prev => ({
-                                            ...prev,
-                                            max: e.target.value
-                                        }))}
-                                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex justify-between">
-                                <button
-                                    onClick={() => {
-                                        setShowCustomRange(false)
-                                        setCustomPrice({ min: '', max: '' })
-                                        onFilterChange({ priceRange: 'all' })
-                                    }}
-                                    className="text-sm text-gray-600 hover:text-gray-900"
-                                >
-                                    ← {t.back}
-                                </button>
-                                <button
-                                    onClick={handleCustomPriceChange}
-                                    className="text-sm text-primary hover:text-primary-hover"
-                                    disabled={!customPrice.min}
-                                >
-                                    {t.apply}
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                    <div className="flex gap-2">
+                        <input
+                            type="number"
+                            placeholder={t.minPrice}
+                            value={localFilters.price_min}
+                            onChange={(e) => handleLocalChange('price_min', e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
+                        />
+                        <input
+                            type="number"
+                            placeholder={t.maxPrice}
+                            value={localFilters.price_max}
+                            onChange={(e) => handleLocalChange('price_max', e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
+                        />
+                    </div>
+                </div>
+
+                {/* Area Range */}
+                <div>
+                    <h3 className={`text-lg font-semibold mb-3 ${
+                        language === 'ar' ? 'font-arabic' : ''
+                    }`}>
+                        {t.area}
+                    </h3>
+                    <div className="flex gap-2">
+                        <input
+                            type="number"
+                            placeholder={`${t.minArea} ${t.sqm}`}
+                            value={localFilters.area_min}
+                            onChange={(e) => handleLocalChange('area_min', e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
+                        />
+                        <input
+                            type="number"
+                            placeholder={`${t.maxArea} ${t.sqm}`}
+                            value={localFilters.area_max}
+                            onChange={(e) => handleLocalChange('area_max', e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
+                        />
+                    </div>
                 </div>
 
                 {/* Bedrooms */}
@@ -307,15 +344,18 @@ export default function PropertyFilters({ language, activeFilters, onFilterChang
                         {t.bedrooms}
                     </h3>
                     <select
-                        value={activeFilters.bedrooms}
-                        onChange={(e) => onFilterChange({ bedrooms: e.target.value })}
+                        value={localFilters.bedrooms}
+                        onChange={(e) => handleLocalChange('bedrooms', e.target.value)}
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
                     >
-                        {Object.entries(t.bedroomOptions).map(([value, label]) => (
-                            <option key={value} value={value}>
-                                {label}
-                            </option>
-                        ))}
+                        <option value="">{t.bedroomOptions.all}</option>
+                        {Object.entries(t.bedroomOptions)
+                            .filter(([key]) => key !== 'all')
+                            .map(([value, label]) => (
+                                <option key={value} value={value}>
+                                    {label}
+                                </option>
+                            ))}
                     </select>
                 </div>
 
@@ -327,71 +367,67 @@ export default function PropertyFilters({ language, activeFilters, onFilterChang
                         {t.location}
                     </h3>
                     <select
-                        value={activeFilters.location}
-                        onChange={(e) => onFilterChange({ location: e.target.value })}
+                        value={localFilters.location}
+                        onChange={(e) => handleLocalChange('location', e.target.value)}
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
                     >
-                        {Object.entries(t.locations).map(([value, label]) => (
-                            <option key={value} value={value}>
-                                {label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Area Range Filter */}
-                <div>
-                    <h3 className={`text-lg font-semibold mb-3 ${
-                        language === 'ar' ? 'font-arabic' : ''
-                    }`}>
-                        {t.area}
-                    </h3>
-                    <select
-                        value={activeFilters.areaRange}
-                        onChange={(e) => onFilterChange({ areaRange: e.target.value })}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
-                    >
-                        {Object.entries(t.areaRanges).map(([value, label]) => (
-                            <option key={value} value={value}>
-                                {label}
-                            </option>
-                        ))}
+                        <option value="">{t.locations.all}</option>
+                        {Object.entries(t.locations)
+                            .filter(([key]) => key !== 'all')
+                            .map(([value, label]) => (
+                                <option key={value} value={value}>
+                                    {label}
+                                </option>
+                            ))}
                     </select>
                 </div>
             </div>
 
-            {/* Amenities */}
+            {/* Features */}
             <div className="mt-6">
                 <h3 className={`text-lg font-semibold mb-3 ${
                     language === 'ar' ? 'font-arabic' : ''
                 }`}>
                     {t.amenities}
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    {Object.entries(t.amenityOptions).map(([value, label]) => (
-                        <button
-                            key={value}
-                            onClick={() => handleAmenityToggle(value)}
-                            className={`flex items-center justify-center gap-2 p-2 rounded-md border ${
-                                activeFilters.amenities.includes(value)
-                                    ? 'bg-primary text-white border-primary'
-                                    : 'border-gray-300 hover:border-primary'
-                            }`}
-                        >
-                            {activeFilters.amenities.includes(value) && <FiCheck />}
-                            {label}
-                        </button>
-                    ))}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {Object.entries(t.amenityOptions).map(([key, label]) => {
+                        const featureId = FEATURE_IDS[key];
+                        if (!featureId) return null; // Skip if no matching ID
+
+                        return (
+                            <button
+                                key={key}
+                                onClick={() => handleFeatureToggle(key)}
+                                className={`flex items-center justify-center gap-2 p-2 rounded-md border ${
+                                    localFilters.features.includes(featureId)
+                                        ? 'bg-primary text-white border-primary'
+                                        : 'border-gray-300 hover:border-primary'
+                                }`}
+                            >
+                                {localFilters.features.includes(featureId) && <FiCheck />}
+                                {label}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="mt-6 flex justify-end gap-4">
+            {/* Reset Button */}
+            <div className="mt-6 flex justify-between">
                 <button
                     onClick={resetFilters}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900"
                 >
+                    <FiX />
                     {t.reset}
+                </button>
+
+                <button
+                    onClick={handleApplyFilters}
+                    className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+                >
+                    {t.apply}
                 </button>
             </div>
         </div>

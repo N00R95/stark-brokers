@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { propertyAPI } from '../../services/api'
 import PropertyFilters from './PropertyFilters'
 import { FiHeart, FiMaximize } from 'react-icons/fi'
-import { IoBedOutline, IoWaterOutline } from "react-icons/io5"
+import { IoBedOutline, IoWaterOutline, IoLocationOutline } from "react-icons/io5"
+import React from 'react';
 
 const content = {
   en: {
@@ -25,18 +26,23 @@ const content = {
       villa: 'Villa',
       office: 'Office',
       shop: 'Shop',
-      land: 'Land'
+      land: 'Land',
+      house: 'House',
+      studio: 'Studio',
+      commercial: 'Commercial'
     },
     currency: 'SAR',
     sqm: 'm²',
     apply: 'Apply Filters',
-    reset: 'Reset Filters'
+    reset: 'Reset Filters',
+    from: 'From',
+    viewDetails: 'View Details'
   },
   ar: {
-    title: 'العقارات المتاحة',
+    title: 'ا��عقارات المتاحة',
     showFilters: 'إظهار الفلاتر',
     hideFilters: 'إخفاء الفلاتر',
-    noProperties: 'لا توجد عقارات متاحة',
+    noProperties: 'لا تجد عقارات متاحة',
     filters: {
       type: 'نوع العقار',
       price: 'نطاق السعر',
@@ -51,14 +57,39 @@ const content = {
       villa: 'فيلا',
       office: 'مكتب',
       shop: 'محل',
-      land: 'أرض'
+      land: 'أرض',
+      house: 'منزل',
+      studio: 'استوديو',
+      commercial: 'تجاري'
     },
     currency: 'ريال',
     sqm: 'م²',
     apply: 'تطبيق الفلاتر',
-    reset: 'إعادة تعيين'
+    reset: 'إعادة تعيين',
+    from: 'من',
+    viewDetails: 'عرض التفاصيل'
   }
 };
+
+class ErrorBoundary extends React.Component {
+    state = { hasError: false };
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error('Property rendering error:', error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return <div className="text-red-500">Something went wrong loading properties.</div>;
+        }
+
+        return this.props.children;
+    }
+}
 
 export default function AvailableProperties({ language }) {
     const navigate = useNavigate()
@@ -71,53 +102,52 @@ export default function AvailableProperties({ language }) {
         price_max: '',
         area_min: '',
         area_max: '',
-        location: '',
         bedrooms: '',
-        bathrooms: '',
-        features: []
+        features: [],
+        location: ''
     })
     const [showFilters, setShowFilters] = useState(false)
 
     // Fetch properties when filters change
     useEffect(() => {
         fetchProperties()
-    }, [filters])
+    }, [])
 
     const fetchProperties = async () => {
         try {
-            setLoading(true)
-            setError(null)
+            setLoading(true);
+            setError(null);
 
-            // Prepare filter params according to API specs
-            const params = {}
+            // Prepare filter params
+            const params = {};
             
-            // Only add filters that have values
-            if (filters.type) params.type = filters.type
-            if (filters.price_min) params.price_min = filters.price_min
-            if (filters.price_max) params.price_max = filters.price_max
-            if (filters.area_min) params.area_min = filters.area_min
-            if (filters.area_max) params.area_max = filters.area_max
-            if (filters.location) params.location = filters.location
-            if (filters.bedrooms) params.bedrooms = filters.bedrooms
-            if (filters.bathrooms) params.bathrooms = filters.bathrooms
-            if (filters.features.length > 0) params.features = filters.features
+            // Only add filters that have values and convert types
+            if (filters.type && filters.type !== 'all') params.type = filters.type;
+            if (filters.price_min) params.price_min = parseFloat(filters.price_min);
+            if (filters.price_max) params.price_max = parseFloat(filters.price_max);
+            if (filters.area_min) params.area_min = parseFloat(filters.area_min);
+            if (filters.area_max) params.area_max = parseFloat(filters.area_max);
+            if (filters.location && filters.location !== 'all') params.location = filters.location;
+            if (filters.bedrooms && filters.bedrooms !== 'all') params.bedrooms = parseInt(filters.bedrooms);
+            if (filters.features?.length > 0) params.features = filters.features;
 
-            console.log('Fetching properties with params:', params)
+            console.log('Fetching properties with params:', params);
 
-            const response = await propertyAPI.getAvailableProperties(params)
+            const response = await propertyAPI.getAvailableProperties(params);
+            console.log('Properties response:', response);
             
-            if (response?.data?.items) {
-                setProperties(response.data.items)
-            } else {
-                setProperties([])
-            }
+            // Check for different possible response structures
+            const items = response?.data?.items || response?.items || [];
+            console.log('Processed items:', items);
+
+            setProperties(items);
         } catch (error) {
-            console.error('Failed to fetch properties:', error)
-            setError(error.message || 'Failed to load properties')
+            console.error('Failed to fetch properties:', error);
+            setError(error.message || 'Failed to load properties');
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
     const handleFilterChange = (newFilters) => {
         setFilters(prev => ({
@@ -126,64 +156,82 @@ export default function AvailableProperties({ language }) {
         }))
     }
 
+    // Add new function to handle filter application
+    const handleApplyFilters = (newFilters) => {
+        setFilters(newFilters);
+        fetchProperties();
+    }
+
     // Property Card Component
     const PropertyCard = ({ property }) => {
         const t = content[language];
-
-        console.log('Property type:', property.type);
+        
+        const propertyType = property.type ? t.propertyTypes[property.type.toLowerCase()] || property.type : null;
 
         return (
             <div 
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer"
+                className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100"
                 onClick={() => navigate(`/properties/${property.id}`)}
             >
-                <div className="relative aspect-[4/3]">
-                    <img 
-                        src={property.images?.[0]?.url || 'https://placehold.co/400x300?text=No+Image'}
+                <div className="relative">
+                    <img
+                        src={property.images?.[0]?.url || 'https://placehold.co/600x400?text=No+Image'}
                         alt={property.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
                     />
-                    {property.type && (
-                        <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium">
-                            {property.type === 'apartment' && t.propertyTypes.apartment}
-                            {property.type === 'villa' && t.propertyTypes.villa}
-                            {property.type === 'office' && t.propertyTypes.office}
-                            {property.type === 'shop' && t.propertyTypes.shop}
-                            {property.type === 'land' && t.propertyTypes.land}
+                    {propertyType && (
+                        <div className="absolute top-4 right-4 bg-[#BE092B]/90 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            {propertyType}
                         </div>
                     )}
+                    <button 
+                        className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            // Handle save
+                        }}
+                    >
+                        <FiHeart className="text-[#BE092B]" />
+                    </button>
                 </div>
 
-                <div className="p-4">
-                    <h3 className="text-lg font-semibold mb-2">{property.title}</h3>
+                <div className="p-6">
+                    {property.address && (
+                        <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
+                            <IoLocationOutline className="text-[#BE092B]" />
+                            <span>{property.address}</span>
+                        </div>
+                    )}
                     
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                    <h3 className="text-xl font-semibold mb-4 line-clamp-2 text-gray-800">{property.title}</h3>
+                    
+                    <div className="flex items-center gap-4 mb-4 text-gray-600">
                         {property.number_bedroom && (
-                            <span className="flex items-center gap-1">
-                                <IoBedOutline />
-                                {property.number_bedroom}
-                            </span>
+                            <div className="flex items-center gap-1">
+                                <IoBedOutline className="text-[#BE092B]" />
+                                <span>{property.number_bedroom}</span>
+                            </div>
                         )}
                         {property.number_bathroom && (
-                            <span className="flex items-center gap-1">
-                                <IoWaterOutline />
-                                {property.number_bathroom}
-                            </span>
+                            <div className="flex items-center gap-1">
+                                <IoWaterOutline className="text-[#BE092B]" />
+                                <span>{property.number_bathroom}</span>
+                            </div>
                         )}
                         {property.area && (
-                            <span className="flex items-center gap-1">
-                                <FiMaximize />
-                                {property.area} {t.sqm}
-                            </span>
+                            <div className="flex items-center gap-1">
+                                <FiMaximize className="text-[#BE092B]" />
+                                <span>{property.area} m²</span>
+                            </div>
                         )}
                     </div>
 
                     {property.features?.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-3">
+                        <div className="flex flex-wrap gap-2 mb-4">
                             {property.features.slice(0, 3).map(feature => (
                                 <span 
                                     key={feature.id}
-                                    className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"
+                                    className="text-xs px-2 py-1 bg-gray-50 text-gray-600 rounded-full border border-gray-100"
                                 >
                                     {feature.name}
                                 </span>
@@ -196,24 +244,27 @@ export default function AvailableProperties({ language }) {
                         </div>
                     )}
 
-                    <div className="flex justify-between items-center">
-                        <span className="text-primary font-bold text-lg">
-                            {property.price} {t.currency}
-                        </span>
-                        <button 
-                            className="text-gray-500 hover:text-primary transition-colors"
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                        <div>
+                            <span className="text-gray-500 text-sm">{t.from}</span>
+                            <p className="text-[#BE092B] font-bold text-xl">
+                                {property.price} {t.currency}
+                            </p>
+                        </div>
+                        <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                // Handle save property
+                                navigate(`/properties/${property.id}`);
                             }}
+                            className="px-4 py-2 bg-[#BE092B]/90 text-white rounded-lg hover:bg-[#8a1328] transition-colors"
                         >
-                            <FiHeart className="w-6 h-6" />
+                            {t.viewDetails}
                         </button>
                     </div>
                 </div>
             </div>
         );
-    }
+    };
 
     if (loading) {
         return (
@@ -255,10 +306,9 @@ export default function AvailableProperties({ language }) {
             {showFilters && (
                 <div className="mb-8">
                     <PropertyFilters
-                        filters={filters}
-                        onFilterChange={handleFilterChange}
                         language={language}
-                        translations={content[language].filters}
+                        activeFilters={filters}
+                        onFilterChange={handleApplyFilters}
                     />
                 </div>
             )}
@@ -268,11 +318,13 @@ export default function AvailableProperties({ language }) {
                     <p className="text-gray-500">{content[language].noProperties}</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {properties.map(property => (
-                        <PropertyCard key={property.id} property={property} />
-                    ))}
-                </div>
+                <ErrorBoundary>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {properties.map(property => (
+                            <PropertyCard key={property.id} property={property} />
+                        ))}
+                    </div>
+                </ErrorBoundary>
             )}
         </div>
     )

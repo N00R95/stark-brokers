@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { propertyAPI } from '../../services/api'
-import { FiMaximize, FiMapPin } from 'react-icons/fi'
+import { FiMaximize, FiMapPin, FiHeart } from 'react-icons/fi'
 import { IoBedOutline, IoWaterOutline } from "react-icons/io5"
+import BookingForm from './BookingForm'
 import {
   FaParking,
   FaSwimmingPool,
@@ -28,46 +29,24 @@ import {
   FaLeaf,
   FaRoad,
   FaStore
-} from 'react-icons/fa'
-import BookingForm from './BookingForm'
-
-// Feature icons mapping
-const featureIcons = {
-  1: FaParking,      // Parking
-  2: FaSwimmingPool, // Swimming Pool
-  3: FaDumbbell,     // Gym
-  4: FaShieldAlt,    // 24/7 Security
-  5: FaBuilding,     // Elevator
-  6: FaTree,         // Garden
-  7: FaSnowflake,    // Central AC
-  8: FaUmbrella,     // Balcony
-  9: FaUser,         // Maid's Room
-  10: FaBox,         // Storage Room
-  11: FaBlender,     // Kitchen Appliances
-  12: FaWifi,        // Internet
-  13: FaSatellite,   // Satellite/Cable TV
-  14: FaPhone,       // Intercom
-  15: FaTools,       // Maintenance
-  16: FaMosque,      // Nearby Mosque
-  17: FaShoppingCart, // Shopping Centers
-  18: FaGraduationCap, // Schools Nearby
-  19: FaPaw,         // Pets Allowed
-  20: FaWater,       // Sea View
-  21: FaCity,        // City View
-  22: FaLeaf,        // Garden View
-  23: FaRoad,        // Street View
-  24: FaStore        // Mall View
-}
+} from 'react-icons/fa';
 
 const content = {
   en: {
     loading: 'Loading property details...',
     error: 'Failed to load property details',
-    specifications: 'Specifications',
+    description: 'Description',
     features: 'Features',
     amenities: 'Amenities',
     location: 'Location',
     bookTour: 'Book a Tour',
+    saveToFavorites: 'Save to Favorites',
+    removeFromFavorites: 'Remove from Favorites',
+    currency: 'SAR',
+    sqm: 'm²',
+    bedrooms: 'Bedrooms',
+    bathrooms: 'Bathrooms',
+    area: 'Area',
     propertyTypes: {
       apartment: 'Apartment',
       villa: 'Villa',
@@ -75,11 +54,6 @@ const content = {
       shop: 'Shop',
       land: 'Land'
     },
-    currency: 'SAR',
-    sqm: 'm²',
-    bedrooms: 'Bedrooms',
-    bathrooms: 'Bathrooms',
-    area: 'Area',
     categories: {
       'Amenities': 'Amenities',
       'Additional Features': 'Additional Features'
@@ -113,12 +87,19 @@ const content = {
   },
   ar: {
     loading: 'جاري تحميل تفاصيل العقار...',
-    error: 'فشل في تحميل تفاصيل العقار',
-    specifications: 'المواصفات',
+    error: 'فشل في تحميل تفاصي العقار',
+    description: 'الوصف',
     features: 'المميزات',
     amenities: 'المرافق',
     location: 'الموقع',
     bookTour: 'حجز جولة',
+    saveToFavorites: 'حفظ في المفضلة',
+    removeFromFavorites: 'إزالة من المفضلة',
+    currency: 'ريال',
+    sqm: 'م²',
+    bedrooms: 'غرف النوم',
+    bathrooms: 'دورات المياه',
+    area: 'المساحة',
     propertyTypes: {
       apartment: 'شقة',
       villa: 'فيلا',
@@ -126,11 +107,6 @@ const content = {
       shop: 'محل',
       land: 'أرض'
     },
-    currency: 'ريال',
-    sqm: 'م²',
-    bedrooms: 'غرف النوم',
-    bathrooms: 'دورات المياه',
-    area: 'المساحة',
     categories: {
       'Amenities': 'المرافق',
       'Additional Features': 'مميزات إضافية'
@@ -147,14 +123,14 @@ const content = {
       9: 'غرفة خادمة',
       10: 'غرفة تخزين',
       11: 'أجهزة مطبخ',
-      12: 'إنترنت',
+      12: 'خدمة إنترنت',
       13: 'قنوات فضائية',
       14: 'اتصال داخلي',
       15: 'صيانة',
       16: 'مسجد قريب',
-      17: 'مراكز تسوق',
+      17: 'مراكز تسوق قريبة',
       18: 'مدارس قريبة',
-      19: 'يسمح بالحيوانات الأليفة',
+      19: 'يسمح بالحيوانات',
       20: 'إطلالة بحرية',
       21: 'إطلالة على المدينة',
       22: 'إطلالة على الحديقة',
@@ -164,6 +140,34 @@ const content = {
   }
 }
 
+// Feature icons mapping
+const featureIcons = {
+  1: FaParking,      // Parking
+  2: FaSwimmingPool, // Swimming Pool
+  3: FaDumbbell,     // Gym
+  4: FaShieldAlt,    // 24/7 Security
+  5: FaBuilding,     // Elevator
+  6: FaTree,         // Garden
+  7: FaSnowflake,    // Central AC
+  8: FaUmbrella,     // Balcony
+  9: FaUser,         // Maid's Room
+  10: FaBox,         // Storage Room
+  11: FaBlender,     // Kitchen Appliances
+  12: FaWifi,        // Internet
+  13: FaSatellite,   // Satellite/Cable TV
+  14: FaPhone,       // Intercom
+  15: FaTools,       // Maintenance
+  16: FaMosque,      // Nearby Mosque
+  17: FaShoppingCart, // Shopping Centers
+  18: FaGraduationCap, // Schools Nearby
+  19: FaPaw,         // Pets Allowed
+  20: FaWater,       // Sea View
+  21: FaCity,        // City View
+  22: FaLeaf,        // Garden View
+  23: FaRoad,        // Street View
+  24: FaStore        // Mall View
+};
+
 export default function PropertyDetails({ language }) {
   const { id } = useParams()
   const [property, setProperty] = useState(null)
@@ -171,6 +175,7 @@ export default function PropertyDetails({ language }) {
   const [error, setError] = useState(null)
   const [selectedImage, setSelectedImage] = useState(0)
   const [showBookingForm, setShowBookingForm] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(false)
   const [categories, setCategories] = useState([])
 
   const t = content[language]
@@ -178,15 +183,16 @@ export default function PropertyDetails({ language }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true)
         const [propertyResponse, categoriesResponse] = await Promise.all([
           propertyAPI.getPropertyDetails(id),
           propertyAPI.getFeatures()
         ])
-        
+
         if (propertyResponse?.data) {
           setProperty(propertyResponse.data)
         }
-        
+
         if (categoriesResponse?.data) {
           setCategories(categoriesResponse.data)
         }
@@ -201,38 +207,40 @@ export default function PropertyDetails({ language }) {
     fetchData()
   }, [id])
 
-  const handleBookingClick = () => {
-    setShowBookingForm(true)
+  const handleFavorite = async () => {
+    try {
+      if (isFavorite) {
+        await propertyAPI.removeFromFavorites(id)
+      } else {
+        await propertyAPI.addToFavorites(id)
+      }
+      setIsFavorite(!isFavorite)
+    } catch (error) {
+      console.error('Failed to update favorite status:', error)
+    }
   }
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-64 bg-gray-200 rounded-lg"></div>
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-          </div>
-        </div>
+      <div className="animate-pulse max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="h-96 bg-gray-200 rounded-lg mb-8"></div>
+        <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
       </div>
     )
   }
 
-  if (error) {
+  if (error || !property) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p className="text-red-500">{error}</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+        <p className="text-red-500">{error || t.error}</p>
       </div>
     )
   }
-
-  if (!property) return null
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Main Image */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Image Gallery */}
       <div className="relative h-[60vh] mb-8 rounded-lg overflow-hidden">
         <img
           src={property.images?.[selectedImage]?.url || 'https://placehold.co/1200x800?text=No+Image'}
@@ -248,7 +256,7 @@ export default function PropertyDetails({ language }) {
             key={index}
             onClick={() => setSelectedImage(index)}
             className={`aspect-square rounded-lg overflow-hidden ${
-              selectedImage === index ? 'ring-2 ring-primary' : ''
+              selectedImage === index ? 'ring-2 ring-[#BE092B]' : ''
             }`}
           >
             <img
@@ -260,102 +268,112 @@ export default function PropertyDetails({ language }) {
         ))}
       </div>
 
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            {/* Title and Type */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold mb-2">{property.title}</h1>
-              <div className="flex items-center gap-2 text-gray-600">
-                <span>{t.propertyTypes[property.type]}</span>
-                <span>•</span>
-                <span>{property.address}</span>
-              </div>
-            </div>
-
-            {/* Price */}
-            <div className="mb-6">
-              <span className="text-3xl font-bold text-primary">
-                {property.price} {t.currency}
-              </span>
-            </div>
-
-            {/* Specifications */}
-            <div className="grid grid-cols-3 gap-6 mb-8 p-4 bg-gray-50 rounded-lg">
-              {property.number_bedroom && (
-                <div className="flex flex-col items-center">
-                  <IoBedOutline className="text-2xl text-gray-600 mb-2" />
-                  <span className="font-semibold">{property.number_bedroom}</span>
-                  <span className="text-sm text-gray-500">{t.bedrooms}</span>
-                </div>
-              )}
-              {property.number_bathroom && (
-                <div className="flex flex-col items-center">
-                  <IoWaterOutline className="text-2xl text-gray-600 mb-2" />
-                  <span className="font-semibold">{property.number_bathroom}</span>
-                  <span className="text-sm text-gray-500">{t.bathrooms}</span>
-                </div>
-              )}
-              {property.area && (
-                <div className="flex flex-col items-center">
-                  <FiMaximize className="text-2xl text-gray-600 mb-2" />
-                  <span className="font-semibold">{property.area}</span>
-                  <span className="text-sm text-gray-500">{t.sqm}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Description */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">{t.description}</h2>
-              <p className="text-gray-600 whitespace-pre-line">{property.description}</p>
-            </div>
-
-            {/* Categories and Features */}
-            {categories.map(category => {
-              const categoryFeatures = property.features?.filter(feature => {
-                const categoryFeatureIds = category.features.map(f => f.id)
-                return categoryFeatureIds.includes(feature.id)
-              })
-
-              if (!categoryFeatures?.length) return null
-
-              return (
-                <div key={category.id} className="mb-8">
-                  <h2 className="text-xl font-semibold mb-4">
-                    {t.categories[category.name] || category.name}
-                  </h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {categoryFeatures.map(feature => {
-                      const FeatureIcon = featureIcons[feature.id]
-                      return (
-                        <div
-                          key={feature.id}
-                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
-                        >
-                          {FeatureIcon && <FeatureIcon className="text-primary w-5 h-5" />}
-                          <span className="text-gray-700">
-                            {t.features[feature.id] || feature.name}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
+      {/* Property Title, Type and Location */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {property.title}
+        </h1>
+        <div className="flex items-center gap-2 text-gray-600">
+          <span>{property.type ? t.propertyTypes[property.type] || property.type : ''}</span>
+          {property.type && property.address && <span>•</span>}
+          <div className="flex items-center gap-1">
+            <FiMapPin className="text-gray-500" />
+            <span>{property.address}</span>
           </div>
         </div>
+      </div>
 
-        {/* Booking Section */}
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="lg:col-span-2">
+          {/* Specifications */}
+          <div className="flex items-center gap-8 p-6 bg-gray-50 rounded-lg mb-8">
+            {property.number_bedroom && (
+              <div className="flex flex-col items-center">
+                <IoBedOutline className="h-6 w-6 text-gray-600 mb-2" />
+                <span className="font-semibold">{property.number_bedroom}</span>
+                <span className="text-sm text-gray-500">{t.bedrooms}</span>
+              </div>
+            )}
+            {property.number_bathroom && (
+              <div className="flex flex-col items-center">
+                <IoWaterOutline className="h-6 w-6 text-gray-600 mb-2" />
+                <span className="font-semibold">{property.number_bathroom}</span>
+                <span className="text-sm text-gray-500">{t.bathrooms}</span>
+              </div>
+            )}
+            {property.area && (
+              <div className="flex flex-col items-center">
+                <FiMaximize className="h-6 w-6 text-gray-600 mb-2" />
+                <span className="font-semibold">{property.area}</span>
+                <span className="text-sm text-gray-500">{t.sqm}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Description */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">{t.description}</h2>
+            <p className="text-gray-600 whitespace-pre-line">{property.description}</p>
+          </div>
+
+          {/* Features */}
+          {categories.map(category => {
+            const categoryFeatures = property.features?.filter(feature => {
+              const categoryFeatureIds = category.features.map(f => f.id)
+              return categoryFeatureIds.includes(feature.id)
+            })
+
+            if (!categoryFeatures?.length) return null
+
+            return (
+              <div key={category.id} className="mb-8">
+                <h2 className="text-xl font-semibold mb-4">
+                  {t.categories[category.name] || category.name}
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {categoryFeatures.map(feature => {
+                    const FeatureIcon = featureIcons[feature.id]
+                    return (
+                      <div
+                        key={feature.id}
+                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                      >
+                        {FeatureIcon && <FeatureIcon className="text-[#BE092B] w-5 h-5" />}
+                        <span className="text-gray-700">
+                          {t.features[feature.id] || feature.name}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Booking Card */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
-            <h3 className="text-xl font-semibold mb-6">{t.bookTour}</h3>
+          <div className="sticky top-8 bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <span className="text-2xl font-bold text-gray-900">
+                  {property.price} {t.currency}
+                </span>
+              </div>
+              <button
+                onClick={handleFavorite}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <FiHeart 
+                  className={`w-6 h-6 ${isFavorite ? 'fill-[#BE092B] text-[#BE092B]' : 'text-gray-600'}`}
+                />
+              </button>
+            </div>
+
             <button
-              onClick={handleBookingClick}
-              className="w-full bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-hover transition-colors"
+              onClick={() => setShowBookingForm(true)}
+              className="w-full bg-[#BE092B] text-white py-3 rounded-lg font-semibold hover:bg-[#9C0722] transition-colors"
             >
               {t.bookTour}
             </button>
@@ -366,9 +384,9 @@ export default function PropertyDetails({ language }) {
       {/* Booking Form Modal */}
       {showBookingForm && (
         <BookingForm
-          language={language}
           property={property}
           onClose={() => setShowBookingForm(false)}
+          language={language}
         />
       )}
     </div>

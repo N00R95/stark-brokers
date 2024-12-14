@@ -2,53 +2,37 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiMaximize, FiHeart } from 'react-icons/fi';
 import { IoBedOutline, IoWaterOutline, IoLocationOutline } from "react-icons/io5";
+import { propertyAPI } from '../services/api';
 
 export default function FeaturedProperties({ language }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [properties, setProperties] = useState([
-    {
-      id: 1,
-      title: language === 'en' ? 'Luxury Villa with Pool' : 'فيلا فاخرة مع مسبح',
-      location: language === 'en' ? 'Al Olaya, Riyadh' : 'العليا، الرياض',
-      price: '25,000',
-      bedrooms: 5,
-      bathrooms: 6,
-      area: 450,
-      type: 'villa',
-      image: 'https://placehold.co/600x400/png/white?text=Luxury+Villa',
-      isNew: true,
-      isFeatured: true,
-      amenities: ['pool', 'garden', 'security', 'parking']
-    },
-    {
-      id: 2,
-      title: language === 'en' ? 'Modern Office Space' : 'مكتب عصري',
-      location: language === 'en' ? 'King Fahd Road, Riyadh' : 'طريق الملك فهد، الرياض',
-      price: '35,000',
-      area: 300,
-      type: 'office',
-      image: 'https://placehold.co/600x400/png/white?text=Modern+Office',
-      isNew: true,
-      isFeatured: true,
-      amenities: ['parking', 'security', 'reception']
-    },
-    {
-      id: 3,
-      title: language === 'en' ? 'Beachfront Apartment' : 'شقة على البحر',
-      location: language === 'en' ? 'Corniche, Jeddah' : 'الكورنيش، جدة',
-      price: '18,000',
-      bedrooms: 3,
-      bathrooms: 4,
-      area: 220,
-      type: 'apartment',
-      image: 'https://placehold.co/600x400/png/white?text=Beachfront+Apartment',
-      isNew: false,
-      isFeatured: true,
-      amenities: ['gym', 'pool', 'security']
-    },
-    // Add more properties...
-  ]);
+  const [properties, setProperties] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchFeaturedProperties = async () => {
+      try {
+        setLoading(true);
+        const response = await propertyAPI.getFeaturedProperties();
+        console.log('Featured properties response:', response);
+        
+        if (response?.success && Array.isArray(response.data)) {
+          setProperties(response.data);
+        } else {
+          console.warn('No properties found or invalid response format');
+          setProperties([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch featured properties:', error);
+        setError(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProperties();
+  }, []);
 
   const content = {
     en: {
@@ -93,7 +77,7 @@ export default function FeaturedProperties({ language }) {
         pool: 'مسبح',
         garden: 'حديقة',
         security: 'أمن 24/7',
-        parking: 'موقف سيارات',
+        parking: 'مكان سيارات',
         gym: 'صالة رياضية',
         elevator: 'مصعد',
         balcony: 'شرفة',
@@ -113,99 +97,107 @@ export default function FeaturedProperties({ language }) {
 
   const t = content[language];
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
+  const PropertyCard = ({ property }) => {
+    console.log('Rendering property:', property);
 
-  const PropertyCard = ({ property }) => (
-    <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
-      <div className="relative">
-        <img
-          src={property.image}
-          alt={property.title}
-          className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
-        />
-        <div className="absolute top-4 left-4 flex gap-2">
-          {property.isNew && (
-            <span className="bg-[#BE092B]/90 text-white px-3 py-1 rounded-full text-sm font-medium">
-              {t.new}
-            </span>
-          )}
-          {property.isFeatured && (
-            <span className="bg-[#BE092B]/90 text-white px-3 py-1 rounded-full text-sm font-medium">
-              {t.featured}
-            </span>
-          )}
-        </div>
-        <button 
-          className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
-          onClick={(e) => {
-            e.stopPropagation();
-            // Handle save
-          }}
-        >
-          <FiHeart className="text-[#BE092B]" />
-        </button>
-      </div>
-
-      <div className="p-6">
-        <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
-          <IoLocationOutline className="text-[#BE092B]" />
-          <span>{property.location}</span>
-        </div>
-        
-        <h3 className="text-xl font-semibold mb-4 line-clamp-2 text-gray-800">{property.title}</h3>
-        
-        <div className="flex items-center gap-4 mb-4 text-gray-600">
-          {property.bedrooms !== undefined && (
-            <div className="flex items-center gap-1">
-              <IoBedOutline className="text-[#BE092B]" />
-              <span>{property.bedrooms}</span>
-            </div>
-          )}
-          {property.bathrooms !== undefined && (
-            <div className="flex items-center gap-1">
-              <IoWaterOutline className="text-[#BE092B]" />
-              <span>{property.bathrooms}</span>
-            </div>
-          )}
-          <div className="flex items-center gap-1">
-            <FiMaximize className="text-[#BE092B]" />
-            <span>{property.area} m²</span>
+    return (
+      <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
+        <div className="relative">
+          <img
+            src={property.images?.[0]?.url || 'https://placehold.co/600x400?text=No+Image'}
+            alt={property.title}
+            className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
+          />
+          <div className="absolute top-4 left-4 flex gap-2">
+            {property.isNew && (
+              <span className="bg-[#BE092B]/90 text-white px-3 py-1 rounded-full text-sm font-medium">
+                {t.new}
+              </span>
+            )}
+            {property.isFeatured && (
+              <span className="bg-[#BE092B]/90 text-white px-3 py-1 rounded-full text-sm font-medium">
+                {t.featured}
+              </span>
+            )}
           </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2 mb-4">
-          {property.amenities?.map((amenity, index) => (
-            <span 
-              key={index}
-              className="text-xs px-2 py-1 bg-gray-50 text-gray-600 rounded-full border border-gray-100"
-            >
-              {t.amenities[amenity] || amenity}
-            </span>
-          ))}
-        </div>
-
-        <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-          <div>
-            <span className="text-gray-500 text-sm">{t.from}</span>
-            <p className="text-[#BE092B] font-bold text-xl">
-              {property.price} SAR
-            </p>
-          </div>
-          <button
-            onClick={() => navigate(`/properties/${property.id}`)}
-            className="px-4 py-2 bg-[#BE092B]/90 text-white rounded-lg hover:bg-[#8a1328] transition-colors"
+          <button 
+            className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              // Handle save
+            }}
           >
-            {t.viewDetails}
+            <FiHeart className="text-[#BE092B]" />
           </button>
         </div>
+
+        <div className="p-6">
+          {property.address && (
+            <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
+              <IoLocationOutline className="text-[#BE092B]" />
+              <span>{property.address}</span>
+            </div>
+          )}
+          
+          <h3 className="text-xl font-semibold mb-4 line-clamp-2 text-gray-800">{property.title}</h3>
+          
+          <div className="flex items-center gap-4 mb-4 text-gray-600">
+            {property.number_bedroom && (
+              <div className="flex items-center gap-1">
+                <IoBedOutline className="text-[#BE092B]" />
+                <span>{property.number_bedroom}</span>
+              </div>
+            )}
+            {property.number_bathroom && (
+              <div className="flex items-center gap-1">
+                <IoWaterOutline className="text-[#BE092B]" />
+                <span>{property.number_bathroom}</span>
+              </div>
+            )}
+            {property.area && (
+              <div className="flex items-center gap-1">
+                <FiMaximize className="text-[#BE092B]" />
+                <span>{property.area} m²</span>
+              </div>
+            )}
+          </div>
+
+          {property.features?.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {property.features.slice(0, 3).map(feature => (
+                <span 
+                  key={feature.id}
+                  className="text-xs px-2 py-1 bg-gray-50 text-gray-600 rounded-full border border-gray-100"
+                >
+                  {feature.name}
+                </span>
+              ))}
+              {property.features.length > 3 && (
+                <span className="text-xs text-gray-500">
+                  +{property.features.length - 3}
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+            <div>
+              <span className="text-gray-500 text-sm">{t.from}</span>
+              <p className="text-[#BE092B] font-bold text-xl">
+                {property.price} {t.currency}
+              </p>
+            </div>
+            <button
+              onClick={() => navigate(`/properties/${property.id}`)}
+              className="px-4 py-2 bg-[#BE092B]/90 text-white rounded-lg hover:bg-[#8a1328] transition-colors"
+            >
+              {t.viewDetails}
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <section className="py-16 bg-gray-50">
@@ -232,6 +224,24 @@ export default function FeaturedProperties({ language }) {
               </div>
             ))}
           </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-500">
+              {language === 'ar' 
+                ? 'عذراً، حدث خطأ أثناء تحميل العقارات المميزة'
+                : 'Sorry, failed to load featured properties'
+              }
+            </p>
+          </div>
+        ) : properties.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">
+              {language === 'ar'
+                ? 'لا توجد عقارات مميزة حالياً'
+                : 'No featured properties available'
+              }
+            </p>
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
@@ -243,7 +253,7 @@ export default function FeaturedProperties({ language }) {
             <div className="text-center">
               <button
                 onClick={() => navigate('/properties/available')}
-                className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+                className="px-6 py-3 bg-[#BE092B]/90 text-white rounded-lg hover:bg-[#8a1328] transition-colors"
               >
                 {t.viewAll}
               </button>

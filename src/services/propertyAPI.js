@@ -1,5 +1,17 @@
 import axiosInstance from './axiosInstance';
 
+const getDailySeed = () => {
+  const now = new Date();
+  // Create a seed based on year, month, and day
+  return `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+};
+
+// Seeded random function
+const seededRandom = (seed) => {
+  const x = Math.sin(seed++) * 10000;
+  return x - Math.floor(x);
+};
+
 const propertyAPI = {
   // Get all properties/units with filters
   getProperties: async (filters = {}) => {
@@ -214,12 +226,14 @@ const propertyAPI = {
   // Get available properties with filters
   getAvailableProperties: async (filters = {}) => {
     try {
+      console.log('API Request Filters:', filters);
       const response = await axiosInstance.get('/units', {
         params: {
           ...filters,
           status: 'available'
         }
       });
+      console.log('API Response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch available properties:', error);
@@ -251,6 +265,88 @@ const propertyAPI = {
       };
     } catch (error) {
       console.error('Failed to fetch property filters:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Update the getFeaturedProperties method
+  getFeaturedProperties: async () => {
+    try {
+      const response = await axiosInstance.get('/units', {
+        params: {
+          status: 'accepted'
+        }
+      });
+
+      // Get properties from the response
+      const allProperties = response?.data?.data?.items || [];
+      console.log('All properties:', allProperties);
+
+      if (allProperties.length === 0) {
+        return { success: true, data: [] };
+      }
+
+      // Get today's seed
+      const dailySeed = getDailySeed();
+      
+      // Sort properties using the daily seed
+      const sortedProperties = [...allProperties].sort((a, b) => {
+        // Use property IDs with the daily seed to create consistent random ordering
+        const randomA = seededRandom(parseInt(dailySeed + a.id));
+        const randomB = seededRandom(parseInt(dailySeed + b.id));
+        return randomA - randomB;
+      });
+
+      // Take first 3 properties
+      const numberOfProperties = Math.min(3, sortedProperties.length);
+      const selectedProperties = sortedProperties
+        .slice(0, numberOfProperties)
+        .map(property => ({
+          ...property,
+          isNew: new Date(property.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+          isFeatured: true
+        }));
+
+      console.log('Selected properties for today:', selectedProperties);
+
+      return {
+        success: true,
+        data: selectedProperties
+      };
+    } catch (error) {
+      console.error('Failed to fetch featured properties:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Add these methods to propertyAPI
+  addToFavorites: async (unitId) => {
+    try {
+      const response = await axiosInstance.post(`/favorites/store?unit_id=${unitId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to add to favorites:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  removeFromFavorites: async (unitId) => {
+    try {
+      const response = await axiosInstance.delete(`/favorites/delete?unit_id=${unitId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to remove from favorites:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get user's favorites
+  getFavorites: async () => {
+    try {
+      const response = await axiosInstance.get('/favorites');
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get favorites:', error);
       throw error.response?.data || error;
     }
   }
