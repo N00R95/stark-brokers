@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { FiPhone, FiLock } from 'react-icons/fi'
+import { formatPhoneNumber, validateSaudiPhone } from '../../utils/phoneUtils'
 
 export default function Login({ language, userType }) {
   const [step, setStep] = useState('phone') // 'phone' or 'otp'
@@ -10,7 +11,7 @@ export default function Login({ language, userType }) {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   
-  const { login } = useAuth()
+  const { login, verifyOTP } = useAuth()
   const navigate = useNavigate()
 
   const content = {
@@ -53,12 +54,13 @@ export default function Login({ language, userType }) {
       setError(t.phoneRequired)
       return false
     }
-    // Add your phone validation regex here
-    const phoneRegex = /^(\+966|0)?5[0-9]{8}$/
-    if (!phoneRegex.test(phoneNumber)) {
+    
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    if (!validateSaudiPhone(formattedPhone)) {
       setError(t.phoneInvalid)
       return false
     }
+    
     return true
   }
 
@@ -75,46 +77,78 @@ export default function Login({ language, userType }) {
   }
 
   const handleSendOtp = async (e) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError('');
     
-    if (!validatePhone()) return
+    if (!validatePhone()) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      // API call to send OTP
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-      setStep('otp')
-      // Show success message
-      alert(t.otpSent)
-    } catch (error) {
-      setError(error.message || 'Failed to send OTP')
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      console.log('🔄 Sending login request:', {
+        phone: formattedPhone,
+        type: userType
+      });
+
+      const response = await login({
+        phone: formattedPhone,
+        type: userType
+      });
+      
+      if (response.success) {
+        setStep('otp');
+        // Store data for OTP verification
+        localStorage.setItem('auth_phone', formattedPhone);
+        localStorage.setItem('auth_type', userType);
+      } else {
+        throw new Error(response.message || 'Failed to send OTP');
+      }
+    } catch (err) {
+      console.error('❌ Login error:', err);
+      setError(err.message || 'Failed to send OTP');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleVerifyOtp = async (e) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
     
-    if (!validateOtp()) return
-
-    setIsLoading(true)
     try {
-      await login({
-        phoneNumber,
-        otp,
-        userType
-      })
-      const dashboardPath = userType === 'renter' ? '/renter/dashboard' : '/owner/dashboard'
-      navigate(dashboardPath)
-    } catch (error) {
-      setError(error.message || 'Invalid OTP')
+      setIsLoading(true);
+      setError('');
+
+      if (!validateOtp()) return;
+
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const verificationData = {
+        otp: otp,
+        phone: formattedPhone,
+        type: userType
+      };
+
+      const response = await verifyOTP(verificationData);
+
+      if (response.success) {
+        // Clean up temporary storage
+        localStorage.removeItem('auth_phone');
+        localStorage.removeItem('auth_type');
+        
+        // Navigate to appropriate dashboard
+        const redirectPath = `/${userType}/profile`;
+        navigate(redirectPath);
+      } else {
+        setError(response.message || 'Verification failed');
+        setOtp('');
+      }
+    } catch (err) {
+      console.error('❌ Verification error:', err);
+      setError(err.message || 'Verification failed');
+      setOtp('');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">

@@ -1,136 +1,102 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react';
+import { authAPI } from '../services/api';
 
-const AuthContext = createContext(null)
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true) // Start with loading true
-  const [error, setError] = useState(null)
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [loading, setLoading] = useState(true);
 
-  // Check for existing user session on mount
+  // Initialize auth state from localStorage
   useEffect(() => {
-    checkAuth()
-  }, [])
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
 
-  const checkAuth = async () => {
-    try {
-      const savedUser = localStorage.getItem('user')
-      if (savedUser) {
-        // Verify token/session with backend
-        const userData = JSON.parse(savedUser)
-        // Simulate API call to verify user session
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setUser(userData)
-      }
-    } catch (err) {
-      console.error('Auth check failed:', err)
-      localStorage.removeItem('user') // Clear invalid session
-      setError('Session expired. Please login again.')
-    } finally {
-      setLoading(false)
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
     }
-  }
+
+    setLoading(false);
+  }, []);
+
+  const updateAuth = (newToken, userData) => {
+    console.log('🔐 Updating auth state:', { hasToken: !!newToken, hasUser: !!userData });
+
+    if (newToken) {
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+    }
+
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+    }
+  };
 
   const login = async (credentials) => {
-    setLoading(true)
-    setError(null)
     try {
-      // Check if user exists
-      const existingUsers = JSON.parse(localStorage.getItem('users') || '[]')
-      const existingUser = existingUsers.find(u => u.email === credentials.email)
-
-      if (existingUser) {
-        // User exists, update last login
-        const userData = {
-          ...existingUser,
-          lastLogin: new Date().toISOString()
-        }
-        
-        // Update users in storage
-        const updatedUsers = existingUsers.map(u => 
-          u.email === userData.email ? userData : u
-        )
-        localStorage.setItem('users', JSON.stringify(updatedUsers))
-        
-        // Set current user
-        localStorage.setItem('user', JSON.stringify(userData))
-        setUser(userData)
-      } else {
-        throw new Error('User not found')
-      }
+      const response = await authAPI.login(credentials);
+      console.log('✅ Login response:', response);
+      return response;
     } catch (error) {
-      setError(error.message)
-      throw error
-    } finally {
-      setLoading(false)
+      console.error('❌ Login failed:', error);
+      throw error;
     }
-  }
+  };
 
-  const register = async (userData) => {
-    setLoading(true)
-    setError(null)
+  const verifyOTP = async (verificationData) => {
     try {
-      // Check if user already exists
-      const existingUsers = JSON.parse(localStorage.getItem('users') || '[]')
-      if (existingUsers.some(u => u.email === userData.email)) {
-        throw new Error('Email already registered')
+      const response = await authAPI.verifyOTP(verificationData);
+      console.log('✅ OTP verification response:', response);
+
+      if (response.success) {
+        updateAuth(response.data.token, response.data.user);
       }
 
-      // Create new user
-      const newUser = {
-        id: Math.random().toString(36).substr(2, 9),
-        fullName: userData.name,
-        email: userData.email,
-        phone: userData.phone,
-        type: userData.type,
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString()
-      }
-
-      // Save to users list
-      localStorage.setItem('users', JSON.stringify([...existingUsers, newUser]))
-      
-      // Set as current user
-      localStorage.setItem('user', JSON.stringify(newUser))
-      setUser(newUser)
-      
-      return newUser
+      return response;
     } catch (error) {
-      setError(error.message)
-      throw error
-    } finally {
-      setLoading(false)
+      console.error('❌ OTP verification failed:', error);
+      throw error;
     }
-  }
+  };
 
-  const logout = () => {
-    localStorage.removeItem('user')
-    setUser(null)
-    setError(null)
-  }
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
+    }
+  };
 
   const value = {
     user,
+    token,
     loading,
-    error,
-    login,
+    login,           // Added login method
+    verifyOTP,       // Added verifyOTP method
+    updateAuth,
     logout,
-    register,
-    checkAuth,
-  }
+    isAuthenticated: !!token
+  };
 
-  // Show loading state
-  if (loading) {
-    return <div>Loading...</div> // Or your loading component
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context
-} 
+  return context;
+};
