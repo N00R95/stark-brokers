@@ -152,10 +152,10 @@ function Navbar({ language, setLanguage }) {
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                   className="flex items-center gap-2 focus:outline-none"
                 >
-                  <HiUserCircle className="w-8 h-8 text-gray-600" />
                   <span className={`text-sm truncate max-w-[100px] ${language === 'ar' ? 'font-arabic' : ''}`}>
-                    {user.fullName}
+                    {user.full_name}
                   </span>
+                  <HiUserCircle className="w-8 h-8 text-gray-600" />
                 </button>
                 {isProfileMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">

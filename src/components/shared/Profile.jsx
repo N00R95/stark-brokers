@@ -101,6 +101,9 @@ export default function Profile({ language, userType }) {
       edit: 'Edit',
       save: 'Save',
       cancel: 'Cancel',
+      profileDetails: 'Profile Details',
+      businessDetails: 'Business Details',
+      accountDetails: 'Account Details',
     },
     ar: {
       title: 'الملف الشخصي',
@@ -122,6 +125,9 @@ export default function Profile({ language, userType }) {
       edit: 'تعديل',
       save: 'حفظ',
       cancel: 'إلغاء',
+      profileDetails: 'تفاصيل الملف الشخصي',
+      businessDetails: 'تفاصيل العمل',
+      accountDetails: 'تفاصيل الحساب',
     }
   };
 
@@ -163,14 +169,15 @@ export default function Profile({ language, userType }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h1 className={`text-2xl font-bold mb-6 ${language === 'ar' ? 'font-arabic' : ''}`}>
+    <div className="bg-white rounded-lg shadow-md p-8">
+      <h1 className={`text-2xl font-bold mb-8 ${language === 'ar' ? 'font-arabic' : ''}`}>
         {t.title}
       </h1>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Profile Details */}
-        <section>
+        <section className="md:col-span-2">
+          <h2 className="text-xl font-semibold mb-4">{t.profileDetails}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -229,73 +236,78 @@ export default function Profile({ language, userType }) {
                 )}
               </div>
             )}
-
-            {profileData.type === 'owner' && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.businessName}
-                  </label>
-                  {editMode ? (
-                    <input
-                      type="text"
-                      id="business_name"
-                      name="business_name"
-                      value={formData.business_name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                    />
-                  ) : (
-                    <div className="mt-1 text-gray-900">
-                      {profileData.business_name}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.businessLicense}
-                  </label>
-                  {editMode ? (
-                    <input
-                      type="text"
-                      id="business_license"
-                      name="business_license"
-                      value={formData.business_license}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                    />
-                  ) : (
-                    <div className="mt-1 text-gray-900">
-                      {profileData.business_license}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t.address}
-                  </label>
-                  {editMode ? (
-                    <input
-                      type="text"
-                      id="address"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                    />
-                  ) : (
-                    <div className="mt-1 text-gray-900">{profileData.address}</div>
-                  )}
-                </div>
-              </>
-            )}
           </div>
         </section>
 
+        {/* Business Details */}
+        {profileData.type === 'owner' && (
+          <section className="md:col-span-2">
+            <h2 className="text-xl font-semibold mb-4">{t.businessDetails}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t.businessName}
+                </label>
+                {editMode ? (
+                  <input
+                    type="text"
+                    id="business_name"
+                    name="business_name"
+                    value={formData.business_name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                  />
+                ) : (
+                  <div className="mt-1 text-gray-900">
+                    {profileData.business_name}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t.businessLicense}
+                </label>
+                {editMode ? (
+                  <input
+                    type="text"
+                    id="business_license"
+                    name="business_license"
+                    value={formData.business_license}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                  />
+                ) : (
+                  <div className="mt-1 text-gray-900">
+                    {profileData.business_license}
+                  </div>
+                )}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t.address}
+                </label>
+                {editMode ? (
+                  <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                  />
+                ) : (
+                  <div className="mt-1 text-gray-900">{profileData.address}</div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Account Details */}
-        <section>
+        <section className="md:col-span-2">
+          <h2 className="text-xl font-semibold mb-4">{t.accountDetails}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -314,7 +326,7 @@ export default function Profile({ language, userType }) {
         </section>
 
         {/* Form Actions */}
-        <div className="flex justify-end gap-4">
+        <div className="md:col-span-2 flex justify-end gap-4">
           {editMode ? (
             <>
               <button
