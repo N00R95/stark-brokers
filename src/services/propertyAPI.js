@@ -29,7 +29,8 @@ const propertyAPI = {
       const response = await axiosInstance.get('/categories');
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      console.error('Failed to fetch categories:', error);
+      throw error.response?.data || error;
     }
   },
 
@@ -207,6 +208,50 @@ const propertyAPI = {
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
+    }
+  },
+
+  // Get available properties with filters
+  getAvailableProperties: async (filters = {}) => {
+    try {
+      const response = await axiosInstance.get('/units', {
+        params: {
+          ...filters,
+          status: 'available'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch available properties:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get property details
+  getPropertyDetails: async (id) => {
+    try {
+      const response = await axiosInstance.get(`/units/details/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch property details:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get property filters (types, features, etc.)
+  getPropertyFilters: async () => {
+    try {
+      const [typesResponse, featuresResponse] = await Promise.all([
+        axiosInstance.get('/units/type'),
+        axiosInstance.get('/categories')
+      ]);
+      return {
+        types: typesResponse.data,
+        features: featuresResponse.data
+      };
+    } catch (error) {
+      console.error('Failed to fetch property filters:', error);
+      throw error.response?.data || error;
     }
   }
 };
