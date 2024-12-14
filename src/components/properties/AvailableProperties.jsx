@@ -86,24 +86,39 @@ export default function AvailableProperties({ language }) {
 
     const fetchProperties = async () => {
         try {
-            setLoading(true)
-            const response = await propertyAPI.getAvailable()
-            if (response?.data?.properties) {
-                setProperties(response.data.properties)
-                setFilteredProperties(response.data.properties)
+            setLoading(true);
+            // Convert activeFilters to match API expectations
+            const apiFilters = {
+                type: activeFilters.type !== 'all' ? activeFilters.type : undefined,
+                number_bedroom: activeFilters.bedrooms !== 'all' ? activeFilters.bedrooms : undefined,
+                address: activeFilters.location !== 'all' ? activeFilters.location : undefined
+            };
+
+            // Handle price range separately
+            if (activeFilters.priceRange !== 'all') {
+                const [min, max] = activeFilters.priceRange.split('-');
+                if (min) apiFilters.price_from = min;
+                if (max) apiFilters.price_to = max;
+            }
+
+            const response = await propertyAPI.getAvailable(apiFilters);
+            
+            if (response?.data?.items) {
+                setProperties(response.data.items);
+                setFilteredProperties(response.data.items);
             } else {
-                setProperties([])
-                setFilteredProperties([])
+                setProperties([]);
+                setFilteredProperties([]);
             }
         } catch (error) {
-            console.error('Failed to fetch properties:', error)
-            setError(t.error)
-            setProperties([])
-            setFilteredProperties([])
+            console.error('Failed to fetch properties:', error);
+            setError(error.message || t.error);
+            setProperties([]);
+            setFilteredProperties([]);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
     const applyFilters = () => {
         let filtered = [...properties]
