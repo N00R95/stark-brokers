@@ -234,6 +234,58 @@ const authAPI = {
       }
     }
   },
+
+  // Update Profile (POST /api/v1/auth/update-profile)
+  updateProfile: async (profileData) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return {
+          success: false,
+          status: 401,
+          message: 'Please login first',
+        };
+      }
+
+      const formData = new FormData();
+      Object.keys(profileData).forEach((key) => {
+        formData.append(key, profileData[key]);
+      });
+
+      const response = await axiosInstance.post('auth/update-profile', formData, {
+        headers: {
+          Authorization: token,
+          Accept: 'application/json',
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.success && response.data.data) {
+        return {
+          success: true,
+          data: response.data.data,
+        };
+      }
+
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        return {
+          success: false,
+          status: 401,
+          message: 'Session expired. Please login again.',
+        };
+      }
+
+      return {
+        success: false,
+        status: error.response?.status || 500,
+        message: error.response?.data?.message || 'Failed to update profile',
+      };
+    }
+  },
 }
 
 export default authAPI
