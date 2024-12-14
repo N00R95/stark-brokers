@@ -64,7 +64,7 @@ const content = {
     },
     currency: 'ريال',
     sqm: 'م²',
-    apply: 'تطبيق الفلاتر',
+    apply: 'تطبيق الفلاتر', 
     reset: 'إعادة تعيين',
     from: 'من',
     viewDetails: 'عرض التفاصيل'

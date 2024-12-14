@@ -388,7 +388,7 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
                 <h3 className={`text-lg font-semibold mb-3 ${
                     language === 'ar' ? 'font-arabic' : ''
                 }`}>
-                    {t.amenities}
+                   {t.amenities}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {Object.entries(t.amenityOptions).map(([key, label]) => {

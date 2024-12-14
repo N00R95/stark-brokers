@@ -26,7 +26,7 @@ export default function FeaturedProperties({ language }) {
       } catch (error) {
         console.error('Failed to fetch featured properties:', error);
         setError(error);
-      } finally {
+      } finally { 
         setLoading(false);
       }
     };

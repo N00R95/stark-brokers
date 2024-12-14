@@ -6,4 +6,4 @@ export {
   authAPI,
   propertyAPI,
   axiosInstance
-};
+}; 

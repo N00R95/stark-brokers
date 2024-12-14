@@ -110,7 +110,7 @@ const authAPI = {
           status: 401,
           message: 'Please login first',
         };
-      }
+      } 
 
       const response = await axiosInstance.post('/auth/profile', null, {
         headers: {
