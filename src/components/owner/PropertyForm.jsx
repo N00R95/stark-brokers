@@ -17,7 +17,10 @@ export default function PropertyForm({ language }) {
     number_bedroom: '',
     number_bathroom: '',
     area: '',
-    address: '',
+    city: '',
+    district: '',
+    street: '',
+    building_number: '',
     features: [],
     image: []
   })
@@ -38,8 +41,8 @@ export default function PropertyForm({ language }) {
       submit: id ? 'Update Property' : 'Add Property',
       cancel: 'Cancel',
       categories: {
-        'category1': 'Amenities',
-        'category 2': 'Additional Features'
+        'Amenities': 'Amenities',
+        'Additional Features': 'Additional Features'
       },
       features: {
         'feature 1': 'Parking',
@@ -56,7 +59,11 @@ export default function PropertyForm({ language }) {
         location: 'Location',
         yearBuilt: 'Year Built',
         furnished: 'Furnished',
-        address: 'Property Address'
+        address: 'Property Address',
+        city: 'City',
+        district: 'District',
+        street: 'Street Name',
+        building_number: 'Building Number'
       },
       types: {
         apartment: 'Apartment',
@@ -79,36 +86,48 @@ export default function PropertyForm({ language }) {
         'mall view': 'Mall View'
       },
       amenityOptions: {
-        parking: 'Parking',
-        swimming_pool: 'Swimming Pool',
-        gym: 'Gym',
-        security: '24/7 Security',
-        elevator: 'Elevator',
-        garden: 'Garden',
-        central_ac: 'Central AC',
-        balcony: 'Balcony',
-        maid_room: "Maid's Room",
-        storage: 'Storage Room',
-        kitchen_appliances: 'Kitchen Appliances',
-        internet: 'Internet',
-        satellite: 'Satellite/Cable TV',
-        intercom: 'Intercom',
-        maintenance: 'Maintenance',
-        mosque: 'Nearby Mosque',
-        shopping: 'Shopping Centers',
-        schools: 'Schools Nearby',
-        pets_allowed: 'Pets Allowed',
-        sea_view: 'Sea View',
-        city_view: 'City View',
-        garden_view: 'Garden View',
-        street_view: 'Street View',
-        mall_view: 'Mall View'
+        'parking': 'Parking',
+        'swimming pool': 'Swimming Pool',
+        'gym': 'Gym',
+        '24/7 security': '24/7 Security',
+        'elevator': 'Elevator',
+        'garden': 'Garden',
+        'central ac': 'Central AC',
+        'balcony': 'Balcony',
+        'maid\'s room': 'Maid\'s Room',
+        'storage room': 'Storage Room',
+        'kitchen appliances': 'Kitchen Appliances',
+        'internet': 'Internet',
+        'satellite/cable tv': 'Satellite/Cable TV',
+        'intercom': 'Intercom',
+        'maintenance': 'Maintenance',
+        'nearby mosque': 'Nearby Mosque',
+        'shopping centers': 'Shopping Centers',
+        'schools nearby': 'Schools Nearby',
+        'pets allowed': 'Pets Allowed',
+        'sea view': 'Sea View',
+        'city view': 'City View',
+        'garden view': 'Garden View',
+        'street view': 'Street View',
+        'mall view': 'Mall View'
       },
       dragDrop: 'Drag and drop images here, or click to select',
-      maxFiles: 'Maximum 10 images'
+      maxFiles: 'Maximum 10 images',
+      cities: {
+        riyadh: 'Riyadh',
+        jeddah: 'Jeddah',
+        mecca: 'Mecca',
+        medina: 'Medina',
+        dammam: 'Dammam',
+        khobar: 'Khobar',
+        dhahran: 'Dhahran',
+        jubail: 'Jubail',
+        taif: 'Taif',
+        abha: 'Abha'
+      }
     },
     ar: {
-      title: id ? 'تعديل العقار' : 'إضافة عقار جديد',
+      title: id ? 'تعديل لعقار' : 'إضافة عقار جديد',
       propertyDetails: 'تفاصيل العقار',
       propertyType: 'نوع العقار',
       location: 'الموقع',
@@ -119,8 +138,8 @@ export default function PropertyForm({ language }) {
       submit: id ? 'تحديث العقار' : 'إضافة العقار',
       cancel: 'إلغاء',
       categories: {
-        'category1': 'المرافق',
-        'category 2': 'مميزات إضافية'
+        'Amenities': 'المرافق',
+        'Additional Features': 'مميزات إضافية'
       },
       features: {
         'feature 1': 'موقف سيارات',
@@ -137,7 +156,11 @@ export default function PropertyForm({ language }) {
         location: 'الموقع',
         yearBuilt: 'سنة البناء',
         furnished: 'مفروش',
-        address: 'عنوان العقار'
+        address: 'عنوان العقار',
+        city: 'المدينة',
+        district: 'الحي',
+        street: 'اسم الشارع',
+        building_number: 'رقم المبنى'
       },
       types: {
         apartment: 'شقة',
@@ -156,37 +179,49 @@ export default function PropertyForm({ language }) {
         'sea view': 'إطلالة بحرية',
         'city view': 'إطلالة على المدينة',
         'garden view': 'إطلالة على الحديقة',
-        'street view': 'إطلالة على الشارع',
+        'street view': 'إطلالة على الشا��ع',
         'mall view': 'إطلالة على المول'
       },
       amenityOptions: {
-        parking: 'موقف سيارات',
-        swimming_pool: 'مسبح',
-        gym: 'صالة رياضية',
-        security: 'أمن 24/7',
-        elevator: 'مصعد',
-        garden: 'حديقة',
-        central_ac: 'تكييف مركزي',
-        balcony: 'شرفة',
-        maid_room: 'غرفة خادمة',
-        storage: 'غرفة تخزين',
-        kitchen_appliances: 'أجهزة مطبخ',
-        internet: 'إنترنت',
-        satellite: 'قنوات فضائية',
-        intercom: 'اتصال داخلي',
-        maintenance: 'صيانة',
-        mosque: 'مسجد قريب',
-        shopping: 'مراكز تسوق',
-        schools: 'مدارس قريبة',
-        pets_allowed: 'يسمح بالحيوانات الأليفة',
-        sea_view: 'إطلالة بحرية',
-        city_view: 'إطلالة على المدينة',
-        garden_view: 'إطلالة على الحديقة',
-        street_view: 'إطلالة على الشارع',
-        mall_view: 'إطلالة على المول'
+        'parking': 'موقف سيارات',
+        'swimming pool': 'مسبح',
+        'gym': 'صالة رياضية',
+        '24/7 security': 'حراسة أمنية 24/7',
+        'elevator': 'مصعد',
+        'garden': 'حديقة',
+        'central ac': 'تكييف مركزي',
+        'balcony': 'شرفة',
+        'maid\'s room': 'غرفة خادمة',
+        'storage room': 'غرفة تخزين',
+        'kitchen appliances': 'أجهزة مطبخ',
+        'internet': 'إنترنت',
+        'satellite/cable tv': 'قنوات فضائية/تلفاز',
+        'intercom': 'اتصال داخلي',
+        'maintenance': 'صيانة',
+        'nearby mosque': 'مسجد قريب',
+        'shopping centers': 'مراكز تسوق قريبة',
+        'schools nearby': 'مدارس قريبة',
+        'pets allowed': 'يسمح بالحيوانات الأليفة',
+        'sea view': 'إطلالة بحرية',
+        'city view': 'إطلالة على المدينة',
+        'garden view': 'إطلالة على الحديقة',
+        'street view': 'إطلالة على الشارع',
+        'mall view': 'إطلالة على المول'
       },
       dragDrop: 'اسحب وأفلت الصور هنا، أو انقر للاختيار',
-      maxFiles: 'الحد الأقصى 10 صور'
+      maxFiles: 'الحد الأقصى 10 صور',
+      cities: {
+        riyadh: 'الرياض',
+        jeddah: 'جدة',
+        mecca: 'مكة المكرمة',
+        medina: 'المدينة المنورة',
+        dammam: 'الدمام',
+        khobar: 'الخبر',
+        dhahran: 'الظهران',
+        jubail: 'الجبيل',
+        taif: 'الطائف',
+        abha: 'أبها'
+      }
     }
   }
 
@@ -223,6 +258,14 @@ export default function PropertyForm({ language }) {
       const response = await propertyAPI.getPropertyById(id)
       if (response?.data) {
         const propertyData = response.data
+        let city = '', district = '', street = '', building_number = '';
+        if (propertyData.address) {
+          const addressParts = propertyData.address.split(', ');
+          if (addressParts.length >= 4) {
+            [building_number, street, district, city] = addressParts;
+          }
+        }
+
         setFormData({
           title: propertyData.title,
           description: propertyData.description,
@@ -231,7 +274,10 @@ export default function PropertyForm({ language }) {
           number_bedroom: propertyData.number_bedroom,
           number_bathroom: propertyData.number_bathroom,
           area: propertyData.area,
-          address: propertyData.address,
+          city,
+          district,
+          street,
+          building_number,
           features: propertyData.features?.map(f => f.id) || [],
           image: propertyData.images?.map(img => img.url) || []
         })
@@ -240,7 +286,7 @@ export default function PropertyForm({ language }) {
       console.error('Failed to fetch property:', error)
       setSubmitStatus({
         success: false,
-        message: language === 'ar' ? 'فشل في تحميل بيانات الع��ار' : 'Failed to load property data'
+        message: language === 'ar' ? 'فشل في تحميل بيانات العقار' : 'Failed to load property data'
       })
     } finally {
       setLoading(false)
@@ -253,18 +299,18 @@ export default function PropertyForm({ language }) {
     setLoading(true);
 
     try {
-      // Validate required fields based on whether it's create or update
+      // Validate required fields
       const validationErrors = {};
-      
-      // For create, all fields are required
+
       if (!id) {
         if (!formData.title?.trim()) validationErrors.title = 'The title field is required.';
         if (!formData.price) validationErrors.price = 'The price field is required.';
         if (!formData.type) validationErrors.type = 'The type field is required.';
         if (!formData.area) validationErrors.area = 'The area field is required.';
-        if (!formData.number_bedroom) validationErrors.number_bedroom = 'The number of bedrooms is required.';
-        if (!formData.number_bathroom) validationErrors.number_bathroom = 'The number of bathrooms is required.';
-        if (!formData.address?.trim()) validationErrors.address = 'The address field is required.';
+        if (!formData.city) validationErrors.city = 'City is required.';
+        if (!formData.district) validationErrors.district = 'District is required.';
+        if (!formData.street) validationErrors.street = 'Street name is required.';
+        if (!formData.building_number) validationErrors.building_number = 'Building number is required.';
         if (!formData.image?.length) validationErrors.image = 'At least one image is required.';
       }
 
@@ -274,40 +320,61 @@ export default function PropertyForm({ language }) {
         return;
       }
 
-      // Prepare data
+      // Combine address fields
+      const fullAddress = [
+        formData.building_number,
+        formData.street,
+        formData.district,
+        formData.city
+      ].filter(Boolean).join(', ');
+
+      // Prepare data with required fields
       const submitData = {
         title: formData.title.trim(),
         description: formData.description?.trim() || '',
         type: formData.type,
         price: parseFloat(formData.price),
         area: parseFloat(formData.area),
-        number_bedroom: parseInt(formData.number_bedroom) || 0,
-        number_bathroom: parseInt(formData.number_bathroom) || 0,
-        address: formData.address.trim(),
-        features: formData.features,
+        address: fullAddress,
         image: formData.image
       };
+
+      // Only add features if they exist and are not empty
+      if (formData.features && formData.features.length > 0) {
+        submitData.features = formData.features;
+      }
+
+      // Only add bedroom/bathroom if they have valid values (greater than 0)
+      const bedroomValue = parseInt(formData.number_bedroom);
+      if (bedroomValue && bedroomValue > 0) {
+        submitData.number_bedroom = bedroomValue;
+      }
+
+      const bathroomValue = parseInt(formData.number_bathroom);
+      if (bathroomValue && bathroomValue > 0) {
+        submitData.number_bathroom = bathroomValue;
+      }
 
       // Debug log
       console.log(`${id ? 'Updating' : 'Creating'} property:`, submitData);
 
-      const response = id 
+      const response = id
         ? await propertyAPI.updateProperty(id, submitData)
         : await propertyAPI.createProperty(submitData);
 
       if (response.success) {
         setSubmitStatus({
           success: true,
-          message: language === 'ar' 
+          message: language === 'ar'
             ? (id ? 'تم تحديث العقار بنجاح' : 'تم إضافة العقار بنجاح')
             : (id ? 'Property updated successfully' : 'Property added successfully')
         });
-        
+
         setTimeout(() => navigate('/owner/properties'), 2000);
       }
     } catch (error) {
       console.error('Form submission error:', error);
-      
+
       if (error.error) {
         const apiErrors = {};
         error.error.forEach(err => {
@@ -318,7 +385,7 @@ export default function PropertyForm({ language }) {
 
       setSubmitStatus({
         success: false,
-        message: language === 'ar' 
+        message: language === 'ar'
           ? (id ? 'حدث خطأ أثناء تحديث العقار' : 'حدث خطأ أثناء حفظ العقار')
           : (id ? 'Failed to update property' : 'Failed to save property')
       });
@@ -327,31 +394,45 @@ export default function PropertyForm({ language }) {
     }
   };
 
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files).filter(file => {
-      const isValid = file.type.startsWith('image/');
-      if (!isValid) {
-        console.error('Invalid file type:', file.type);
-      }
-      return isValid;
-    });
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
 
+    // Validate file count
     if (files.length + formData.image.length > 10) {
-      alert(t.maxFiles);
+      setErrors(prev => ({
+        ...prev,
+        image: language === 'ar'
+          ? 'الحد الأقصى 10 صور'
+          : 'Maximum 10 images allowed'
+      }));
       return;
     }
 
-    setFormData(prev => ({
-      ...prev,
-      image: [...prev.image, ...files]
-    }));
+    // Validate file types
+    const validFiles = [];
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const newPreviews = [];
 
-    // Create preview URLs
-    const newPreviews = files.map(file => URL.createObjectURL(file));
-    setPreviewImages(prev => [...prev, ...newPreviews]);
-    
-    // Clear any image-related errors
-    setErrors(prev => ({ ...prev, image: undefined }));
+    for (const file of files) {
+      if (!validImageTypes.includes(file.type)) {
+        console.error('Invalid file type:', file.type);
+        continue;
+      }
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      validFiles.push(file);
+      newPreviews.push(previewUrl);
+    }
+
+    if (validFiles.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        image: [...prev.image, ...validFiles]
+      }));
+      setPreviewImages(prev => [...prev, ...newPreviews]);
+      setErrors(prev => ({ ...prev, image: undefined }));
+    }
   };
 
   const removeImage = (index) => {
@@ -393,9 +474,8 @@ export default function PropertyForm({ language }) {
                   // Clear error when field is updated
                   setErrors(prev => ({ ...prev, title: undefined }))
                 }}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-primary ${
-                  errors.title ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-primary ${errors.title ? 'border-red-500' : 'border-gray-300'
+                  }`}
               />
               {errors.title && (
                 <p className="mt-1 text-sm text-red-600">{errors.title}</p>
@@ -456,11 +536,21 @@ export default function PropertyForm({ language }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t.fields.bedrooms}
+                <span className="text-gray-400 ml-1">(Optional)</span>
               </label>
               <input
                 type="number"
+                min="1"
                 value={formData.number_bedroom}
-                onChange={(e) => setFormData({ ...formData, number_bedroom: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Only set the value if it's greater than 0
+                  if (value && parseInt(value) > 0) {
+                    setFormData({ ...formData, number_bedroom: value });
+                  } else {
+                    setFormData({ ...formData, number_bedroom: '' });
+                  }
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
               />
             </div>
@@ -468,11 +558,21 @@ export default function PropertyForm({ language }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t.fields.bathrooms}
+                <span className="text-gray-400 ml-1">(Optional)</span>
               </label>
               <input
                 type="number"
+                min="1"
                 value={formData.number_bathroom}
-                onChange={(e) => setFormData({ ...formData, number_bathroom: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Only set the value if it's greater than 0
+                  if (value && parseInt(value) > 0) {
+                    setFormData({ ...formData, number_bathroom: value });
+                  } else {
+                    setFormData({ ...formData, number_bathroom: '' });
+                  }
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
               />
             </div>
@@ -492,58 +592,108 @@ export default function PropertyForm({ language }) {
           </div>
         </section>
 
-        {/* Address Field */}
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t.fields.address}
-          </label>
-          <input
-            type="text"
-            required
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-          />
-        </div>
+        {/* Replace the old address field with this new Location section */}
+        <section>
+          <h2 className={`text-xl font-semibold mb-4 ${language === 'ar' ? 'font-arabic' : ''}`}>
+            {t.location}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t.fields.city}
+              </label>
+              <select
+                required
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+              >
+                <option value="">{language === 'ar' ? 'اختر المدينة' : 'Select City'}</option>
+                {Object.entries(t.cities).map(([key, value]) => (
+                  <option key={key} value={value}>{value}</option>
+                ))}
+              </select>
+              {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
+            </div>
 
-        {/* Features Section - Update to use categories data */}
-        {categories.map(category => {
-          // Get the translated category name based on the category name
-          const categoryName = category.name === 'Amenities' 
-            ? (language === 'ar' ? 'المرافق' : 'Amenities')
-            : (language === 'ar' ? 'مميزات إضافية' : 'Additional Features');
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t.fields.district}
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.district}
+                onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                placeholder={language === 'ar' ? 'أدخل اسم الحي' : 'Enter district name'}
+              />
+              {errors.district && <p className="mt-1 text-sm text-red-600">{errors.district}</p>}
+            </div>
 
-          return (
-            <section key={category.id} className="space-y-4">
-              <h2 className={`text-xl font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
-                {categoryName}
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {category.features.map(feature => {
-                  // Get the translated feature name
-                  const featureName = t.amenityOptions[feature.name.toLowerCase().replace(/ /g, '_')] || feature.name;
-                  
-                  return (
-                    <label key={feature.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.features.includes(feature.id)}
-                        onChange={(e) => {
-                          const newFeatures = e.target.checked
-                            ? [...formData.features, feature.id]
-                            : formData.features.filter(id => id !== feature.id);
-                          setFormData({ ...formData, features: newFeatures });
-                        }}
-                        className="rounded border-gray-300 text-primary focus:ring-primary"
-                      />
-                      <span className="text-sm text-gray-700">{featureName}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t.fields.street}
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.street}
+                onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                placeholder={language === 'ar' ? 'أدخل اسم الشارع' : 'Enter street name'}
+              />
+              {errors.street && <p className="mt-1 text-sm text-red-600">{errors.street}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t.fields.building_number}
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.building_number}
+                onChange={(e) => setFormData({ ...formData, building_number: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                placeholder={language === 'ar' ? 'أدخل رقم المبنى' : 'Enter building number'}
+              />
+              {errors.building_number && <p className="mt-1 text-sm text-red-600">{errors.building_number}</p>}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        {categories.map(category => (
+          <section key={category.id} className="space-y-4">
+            <h2 className={`text-xl font-semibold ${language === 'ar' ? 'font-arabic' : ''}`}>
+              {t.categories[category.name]}
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {category.features.map(feature => {
+                // Get the translated feature name using lowercase name for consistency
+                const featureName = t.amenityOptions[feature.name.toLowerCase()];
+
+                return (
+                  <label key={feature.id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.features.includes(feature.id)}
+                      onChange={(e) => {
+                        const newFeatures = e.target.checked
+                          ? [...formData.features, feature.id]
+                          : formData.features.filter(id => id !== feature.id);
+                        setFormData({ ...formData, features: newFeatures });
+                      }}
+                      className="rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm text-gray-700">{featureName}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </section>
+        ))}
 
         {/* Images */}
         <section>
@@ -565,7 +715,9 @@ export default function PropertyForm({ language }) {
             >
               <FiUpload className="w-8 h-8 text-gray-400" />
               <span className="text-gray-600">{t.dragDrop}</span>
-              <span className="text-sm text-gray-500">{t.maxFiles}</span>
+              <span className="text-sm text-gray-500">
+                {language === 'ar' ? 'الحد الأقصى 10 صور' : 'Maximum 10 images'}
+              </span>
             </label>
           </div>
 
@@ -611,9 +763,8 @@ export default function PropertyForm({ language }) {
       </form>
 
       {submitStatus.message && (
-        <div className={`fixed bottom-4 right-4 p-4 rounded-lg ${
-          submitStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <div className={`fixed bottom-4 right-4 p-4 rounded-lg ${submitStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
           {submitStatus.message}
         </div>
       )}

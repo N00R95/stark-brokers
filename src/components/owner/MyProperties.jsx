@@ -48,22 +48,22 @@ const PropertyCard = ({ property, onDelete, onStatusUpdate, translations }) => {
         {/* Specifications */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <span className="text-sm text-gray-500">Area</span>
-            <p className="font-medium">{property.area} m²</p>
+            <span className="text-sm text-gray-500">{translations.area}</span>
+            <p className="font-medium">{property.area} {translations.sqm}</p>
           </div>
           <div>
-            <span className="text-sm text-gray-500">Price</span>
-            <p className="font-medium">{property.price} {property.currency}</p>
+            <span className="text-sm text-gray-500">{translations.columns.price}</span>
+            <p className="font-medium">{property.price} {translations.currency}</p>
           </div>
           {property.number_bedroom !== undefined && (
             <div>
-              <span className="text-sm text-gray-500">Bedrooms</span>
+              <span className="text-sm text-gray-500">{translations.bedrooms}</span>
               <p className="font-medium">{property.number_bedroom}</p>
             </div>
           )}
           {property.number_bathroom !== undefined && (
             <div>
-              <span className="text-sm text-gray-500">Bathrooms</span>
+              <span className="text-sm text-gray-500">{translations.bathrooms}</span>
               <p className="font-medium">{property.number_bathroom}</p>
             </div>
           )}
@@ -72,15 +72,15 @@ const PropertyCard = ({ property, onDelete, onStatusUpdate, translations }) => {
         {/* Features */}
         {property.features?.length > 0 && (
           <div>
-            <h4 className="font-medium mb-2">Features</h4>
+            <h4 className="font-medium mb-2">{translations.features}</h4>
             <div className="flex flex-wrap gap-2">
               {property.features.map(feature => (
-                <span 
+                <div
                   key={feature.id}
                   className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
                 >
-                  {feature.name}
-                </span>
+                  {translations.amenities[feature.name.toLowerCase()] || feature.name}
+                </div>
               ))}
             </div>
           </div>
@@ -160,24 +160,50 @@ export default function MyProperties({ language }) {
         land: 'Land'
       },
       features: 'Features',
-      specifications: 'Specifications'
+      specifications: 'Specifications',
+      amenities: {
+        'parking': 'Parking',
+        'swimming pool': 'Swimming Pool',
+        'gym': 'Gym',
+        '24/7 security': '24/7 Security',
+        'elevator': 'Elevator',
+        'garden': 'Garden',
+        'central ac': 'Central AC',
+        'balcony': 'Balcony',
+        'maid\'s room': 'Maid\'s Room',
+        'storage room': 'Storage Room',
+        'kitchen appliances': 'Kitchen Appliances',
+        'internet': 'Internet',
+        'satellite/cable tv': 'Satellite/Cable TV',
+        'intercom': 'Intercom',
+        'maintenance': 'Maintenance',
+        'nearby mosque': 'Nearby Mosque',
+        'shopping centers': 'Shopping Centers',
+        'schools nearby': 'Schools Nearby',
+        'pets allowed': 'Pets Allowed',
+        'sea view': 'Sea View',
+        'city view': 'City View',
+        'garden view': 'Garden View',
+        'street view': 'Street View',
+        'mall view': 'Mall View'
+      }
     },
     ar: {
       title: 'عقاراتي',
       addProperty: 'إضافة عقار جديد',
-      noProperties: 'لا توجد عقارات مدرجة بعد',
+      noProperties: 'لا توجد عقارات مضافة',
       edit: 'تعديل',
       delete: 'حذف',
       view: 'عرض',
       status: {
-        pending: 'قيد الانتظار',
+        pending: 'قيد المراجعة',
         accepted: 'مقبول',
         rejected: 'مرفوض',
         booked: 'محجوز',
         available: 'متاح'
       },
       deleteConfirm: 'هل أنت متأكد من حذف هذا العقار؟',
-      actions: 'إجراءات',
+      actions: 'الإجراءات',
       columns: {
         image: 'الصورة',
         title: 'العنوان',
@@ -201,7 +227,33 @@ export default function MyProperties({ language }) {
         land: 'أرض'
       },
       features: 'المميزات',
-      specifications: 'المواصفات'
+      specifications: 'المواصفات',
+      amenities: {
+        'parking': 'موقف سيارات',
+        'swimming pool': 'مسبح',
+        'gym': 'صالة رياضية',
+        '24/7 security': 'حراسة أمنية 24/7',
+        'elevator': 'مصعد',
+        'garden': 'حديقة',
+        'central ac': 'تكييف مركزي',
+        'balcony': 'شرفة',
+        'maid\'s room': 'غرفة خادمة',
+        'storage room': 'غرفة تخزين',
+        'kitchen appliances': 'أجهزة مطبخ',
+        'internet': 'إنترنت',
+        'satellite/cable tv': 'قنوات فضائية/تلفاز',
+        'intercom': 'اتصال داخلي',
+        'maintenance': 'صيانة',
+        'nearby mosque': 'مسجد قريب',
+        'shopping centers': 'مراكز تسوق قريبة',
+        'schools nearby': 'مدارس قريبة',
+        'pets allowed': 'يسمح بالحيوانات الأليفة',
+        'sea view': 'إطلالة بحرية',
+        'city view': 'إطلالة على المدينة',
+        'garden view': 'إطلالة على الحديقة',
+        'street view': 'إطلالة على الشارع',
+        'mall view': 'إطلالة على المول'
+      }
     }
   }
 
@@ -216,7 +268,7 @@ export default function MyProperties({ language }) {
       setLoading(true)
       const response = await propertyAPI.getOwnerProperties()
       console.log('Properties response:', response)
-      
+
       if (response?.data?.items) {
         setProperties(response.data.items)
       }
@@ -241,7 +293,7 @@ export default function MyProperties({ language }) {
   const handleBookingStatusUpdate = async (propertyId, currentStatus) => {
     const newStatus = currentStatus === 'available' ? 'booked' : 'available'
     const confirmMessage = `${t.confirmStatusUpdate} ${t.status[newStatus]}?`
-    
+
     if (window.confirm(confirmMessage)) {
       try {
         await propertyAPI.updatePropertyStatus(propertyId, newStatus)

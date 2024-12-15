@@ -226,7 +226,7 @@ export default function PropertyDetails({ language }) {
         <div className="h-96 bg-gray-200 rounded-lg mb-8"></div>
         <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
         <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-      </div>  
+      </div>
     )
   }
 
@@ -255,9 +255,8 @@ export default function PropertyDetails({ language }) {
           <button
             key={index}
             onClick={() => setSelectedImage(index)}
-            className={`aspect-square rounded-lg overflow-hidden ${
-              selectedImage === index ? 'ring-2 ring-[#BE092B]' : ''
-            }`}
+            className={`aspect-square rounded-lg overflow-hidden ${selectedImage === index ? 'ring-2 ring-[#BE092B]' : ''
+              }`}
           >
             <img
               src={image.url}
@@ -287,24 +286,24 @@ export default function PropertyDetails({ language }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2">
           {/* Specifications */}
-          <div className="flex items-center gap-8 p-6 bg-gray-50 rounded-lg mb-8">
+          <div className="flex items-center justify-around p-6 bg-gray-50 rounded-lg mb-8">
             {property.number_bedroom && (
-              <div className="flex flex-col items-center">
-                <IoBedOutline className="h-6 w-6 text-gray-600 mb-2" />
+              <div className="flex flex-col items-center flex-1 px-3">
+                <IoBedOutline className="h-6 w-6 text-[#BE092B] mb-2" />
                 <span className="font-semibold">{property.number_bedroom}</span>
                 <span className="text-sm text-gray-500">{t.bedrooms}</span>
               </div>
             )}
             {property.number_bathroom && (
-              <div className="flex flex-col items-center">
-                <IoWaterOutline className="h-6 w-6 text-gray-600 mb-2" />
+              <div className="flex flex-col items-center flex-1 px-3 border-x border-gray-200">
+                <IoWaterOutline className="h-6 w-6 text-[#BE092B] mb-2" />
                 <span className="font-semibold">{property.number_bathroom}</span>
                 <span className="text-sm text-gray-500">{t.bathrooms}</span>
               </div>
             )}
             {property.area && (
-              <div className="flex flex-col items-center">
-                <FiMaximize className="h-6 w-6 text-gray-600 mb-2" />
+              <div className="flex flex-col items-center flex-1 px-3">
+                <FiMaximize className="h-6 w-6 text-[#BE092B] mb-2" />
                 <span className="font-semibold">{property.area}</span>
                 <span className="text-sm text-gray-500">{t.sqm}</span>
               </div>
@@ -341,8 +340,8 @@ export default function PropertyDetails({ language }) {
                       >
                         {FeatureIcon && <FeatureIcon className="text-[#BE092B] w-5 h-5" />}
                         <span className="text-gray-700">
-                          {language === 'en' 
-                            ? t.features_en[feature.id] 
+                          {language === 'en'
+                            ? t.features_en[feature.id]
                             : t.features_ar[feature.id] || feature.name}
                         </span>
                       </div>
@@ -367,7 +366,7 @@ export default function PropertyDetails({ language }) {
                 onClick={handleFavorite}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <FiHeart 
+                <FiHeart
                   className={`w-6 h-6 ${isFavorite ? 'fill-[#BE092B] text-[#BE092B]' : 'text-gray-600'}`}
                 />
               </button>

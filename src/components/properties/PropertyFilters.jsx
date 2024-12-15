@@ -39,7 +39,55 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
         bedrooms: activeFilters.bedrooms || '',
         features: activeFilters.features || [],
         location: activeFilters.location || ''
-    })
+    });
+
+    // Add state for validation errors
+    const [errors, setErrors] = useState({});
+
+    // Validation function
+    const validateFilters = (filters) => {
+        const newErrors = {};
+
+        // Price range validation
+        if (filters.price_min && filters.price_max) {
+            const minPrice = parseFloat(filters.price_min);
+            const maxPrice = parseFloat(filters.price_max);
+
+            if (!isNaN(minPrice) && !isNaN(maxPrice) && minPrice > maxPrice) {
+                newErrors.price = language === 'ar'
+                    ? 'يجب أن يكون الحد الأدنى للسعر أقل من الحد الأقصى'
+                    : 'Minimum price should be less than maximum price';
+            }
+        }
+
+        // Area range validation
+        if (filters.area_min && filters.area_max) {
+            const minArea = parseFloat(filters.area_min);
+            const maxArea = parseFloat(filters.area_max);
+
+            if (!isNaN(minArea) && !isNaN(maxArea) && minArea > maxArea) {
+                newErrors.area = language === 'ar'
+                    ? 'يجب أن تكون المساحة الدنيا أقل من المساحة القصوى'
+                    : 'Minimum area should be less than maximum area';
+            }
+        }
+
+        // Validate numeric values and ranges
+        if (filters.price_min && (isNaN(parseFloat(filters.price_min)) || parseFloat(filters.price_min) < 0)) {
+            newErrors.price_min = language === 'ar' ? 'يجب أن يكون الرقم صالحًا وموجبًا' : 'Must be a valid positive number';
+        }
+        if (filters.price_max && (isNaN(parseFloat(filters.price_max)) || parseFloat(filters.price_max) < 0)) {
+            newErrors.price_max = language === 'ar' ? 'يجب أن يكون الرقم صالحًا وموجبًا' : 'Must be a valid positive number';
+        }
+        if (filters.area_min && (isNaN(parseFloat(filters.area_min)) || parseFloat(filters.area_min) < 0)) {
+            newErrors.area_min = language === 'ar' ? 'يجب أن يكون الرقم صالحًا وموجبًا' : 'Must be a valid positive number';
+        }
+        if (filters.area_max && (isNaN(parseFloat(filters.area_max)) || parseFloat(filters.area_max) < 0)) {
+            newErrors.area_max = language === 'ar' ? 'يجب أن يكون الرقم صالحًا وموجبًا' : 'Must be a valid positive number';
+        }
+
+        return newErrors;
+    };
 
     const content = {
         en: {
@@ -180,7 +228,7 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
                 kitchen_appliances: 'أجهزة مطبخ',
                 internet: 'إنترنت',
                 satellite: 'قنوات فضائية',
-                intercom: 'اتصال داخلي',
+                intercom: 'تصال داخلي',
                 maintenance: 'صيانة',
                 mosque: 'مسجد قريب',
                 shopping: 'مراكز تسوق',
@@ -211,6 +259,30 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
     const t = content[language]
 
     const handleLocalChange = (key, value) => {
+        // Clear error when user starts typing
+        setErrors(prev => ({ ...prev, [key]: undefined }));
+
+        // Handle numeric inputs
+        if (['price_min', 'price_max', 'area_min', 'area_max'].includes(key)) {
+            // Remove non-numeric characters except decimal point
+            value = value.toString().replace(/[^\d.]/g, '');
+        }
+
+        // Special handling for bedrooms
+        if (key === 'bedrooms') {
+            // If value is empty string (All option), keep it as empty string
+            if (value === '') {
+                setLocalFilters(prev => ({ ...prev, [key]: value }));
+                return;
+            }
+            // Otherwise convert to number
+            const numValue = parseInt(value);
+            if (!isNaN(numValue)) {
+                setLocalFilters(prev => ({ ...prev, [key]: numValue }));
+                return;
+            }
+        }
+
         setLocalFilters(prev => ({
             ...prev,
             [key]: value
@@ -218,32 +290,61 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
     };
 
     const handleApplyFilters = () => {
-        const apiFilters = {
-            ...localFilters,
-            price_min: localFilters.price_min ? parseFloat(localFilters.price_min) : '',
-            price_max: localFilters.price_max ? parseFloat(localFilters.price_max) : '',
-            area_min: localFilters.area_min ? parseFloat(localFilters.area_min) : '',
-            area_max: localFilters.area_max ? parseFloat(localFilters.area_max) : '',
-            bedrooms: localFilters.bedrooms ? parseInt(localFilters.bedrooms) : ''
-        };
+        // Validate filters before applying
+        const validationErrors = validateFilters(localFilters);
 
-        Object.keys(apiFilters).forEach(key => {
-            if (apiFilters[key] === '' || apiFilters[key] === null || apiFilters[key] === undefined) {
-                delete apiFilters[key];
-            }
-        });
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+            return;
+        }
 
-        onFilterChange(apiFilters);
+        // Clear any previous errors
+        setErrors({});
+
+        try {
+            const apiFilters = {
+                ...localFilters,
+                // Convert string values to numbers where needed
+                price_min: localFilters.price_min ? parseFloat(localFilters.price_min.toString().replace(/,/g, '')) : '',
+                price_max: localFilters.price_max ? parseFloat(localFilters.price_max.toString().replace(/,/g, '')) : '',
+                area_min: localFilters.area_min ? parseFloat(localFilters.area_min) : '',
+                area_max: localFilters.area_max ? parseFloat(localFilters.area_max) : '',
+                // Keep bedrooms as is since we handled it in handleLocalChange
+                bedrooms: localFilters.bedrooms,
+                features: localFilters.features
+            };
+
+            // Remove empty values
+            const cleanFilters = Object.entries(apiFilters).reduce((acc, [key, value]) => {
+                if (value === undefined ||
+                    value === null ||
+                    value === '' ||
+                    (Array.isArray(value) && value.length === 0)
+                ) {
+                    return acc;
+                }
+                return { ...acc, [key]: value };
+            }, {});
+
+            onFilterChange(cleanFilters);
+        } catch (error) {
+            console.error('Error applying filters:', error);
+            setErrors({
+                general: language === 'ar'
+                    ? 'حدث خطأ أثناء تطبيق الفلاتر'
+                    : 'Error applying filters'
+            });
+        }
     };
 
     const handleFeatureToggle = (featureKey) => {
         const featureId = FEATURE_IDS[featureKey];
         if (!featureId) return; // Skip if ID not found
-        
+
         const newFeatures = localFilters.features.includes(featureId)
             ? localFilters.features.filter(id => id !== featureId)
             : [...localFilters.features, featureId];
-        
+
         handleLocalChange('features', newFeatures);
     };
 
@@ -258,8 +359,32 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
             features: [],
             location: ''
         };
+
+        // Reset local state
         setLocalFilters(emptyFilters);
-        onFilterChange(emptyFilters);
+        setErrors({});
+
+        // Notify parent component with clean empty filters
+        const cleanEmptyFilters = {
+            type: '',
+            price_min: undefined,
+            price_max: undefined,
+            area_min: undefined,
+            area_max: undefined,
+            bedrooms: undefined,
+            features: [],
+            location: ''
+        };
+
+        onFilterChange(cleanEmptyFilters);
+    };
+
+    // Error message component
+    const ErrorMessage = ({ error }) => {
+        if (!error) return null;
+        return (
+            <p className="text-red-500 text-sm mt-1">{error}</p>
+        );
     };
 
     return (
@@ -267,9 +392,8 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Property Type */}
                 <div>
-                    <h3 className={`text-lg font-semibold mb-3 ${
-                        language === 'ar' ? 'font-arabic' : ''
-                    }`}>
+                    <h3 className={`text-lg font-semibold mb-3 ${language === 'ar' ? 'font-arabic' : ''
+                        }`}>
                         {t.propertyType}
                     </h3>
                     <select
@@ -288,59 +412,70 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
 
                 {/* Price Range */}
                 <div>
-                    <h3 className={`text-lg font-semibold mb-3 ${
-                        language === 'ar' ? 'font-arabic' : ''
-                    }`}>
+                    <h3 className={`text-lg font-semibold mb-3 ${language === 'ar' ? 'font-arabic' : ''
+                        }`}>
                         {t.priceRange}
                     </h3>
                     <div className="flex gap-2">
-                        <input
-                            type="number"
-                            placeholder={t.minPrice}
-                            value={localFilters.price_min}
-                            onChange={(e) => handleLocalChange('price_min', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
-                        />
-                        <input
-                            type="number"
-                            placeholder={t.maxPrice}
-                            value={localFilters.price_max}
-                            onChange={(e) => handleLocalChange('price_max', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
-                        />
+                        <div className="w-full">
+                            <input
+                                type="number"
+                                placeholder={t.minPrice}
+                                value={localFilters.price_min}
+                                onChange={(e) => handleLocalChange('price_min', e.target.value)}
+                                className={`w-full p-2 border ${errors.price_min || errors.price ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:border-primary`}
+                            />
+                            <ErrorMessage error={errors.price_min} />
+                        </div>
+                        <div className="w-full">
+                            <input
+                                type="number"
+                                placeholder={t.maxPrice}
+                                value={localFilters.price_max}
+                                onChange={(e) => handleLocalChange('price_max', e.target.value)}
+                                className={`w-full p-2 border ${errors.price_max || errors.price ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:border-primary`}
+                            />
+                            <ErrorMessage error={errors.price_max} />
+                        </div>
                     </div>
+                    {errors.price && <ErrorMessage error={errors.price} />}
                 </div>
 
                 {/* Area Range */}
                 <div>
-                    <h3 className={`text-lg font-semibold mb-3 ${
-                        language === 'ar' ? 'font-arabic' : ''
-                    }`}>
+                    <h3 className={`text-lg font-semibold mb-3 ${language === 'ar' ? 'font-arabic' : ''
+                        }`}>
                         {t.area}
                     </h3>
                     <div className="flex gap-2">
-                        <input
-                            type="number"
-                            placeholder={`${t.minArea} ${t.sqm}`}
-                            value={localFilters.area_min}
-                            onChange={(e) => handleLocalChange('area_min', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
-                        />
-                        <input
-                            type="number"
-                            placeholder={`${t.maxArea} ${t.sqm}`}
-                            value={localFilters.area_max}
-                            onChange={(e) => handleLocalChange('area_max', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:border-primary"
-                        />
+                        <div className="w-full">
+                            <input
+                                type="number"
+                                placeholder={`${t.minArea} ${t.sqm}`}
+                                value={localFilters.area_min}
+                                onChange={(e) => handleLocalChange('area_min', e.target.value)}
+                                className={`w-full p-2 border ${errors.area_min || errors.area ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:border-primary`}
+                            />
+                            <ErrorMessage error={errors.area_min} />
+                        </div>
+                        <div className="w-full">
+                            <input
+                                type="number"
+                                placeholder={`${t.maxArea} ${t.sqm}`}
+                                value={localFilters.area_max}
+                                onChange={(e) => handleLocalChange('area_max', e.target.value)}
+                                className={`w-full p-2 border ${errors.area_max || errors.area ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:border-primary`}
+                            />
+                            <ErrorMessage error={errors.area_max} />
+                        </div>
                     </div>
+                    {errors.area && <ErrorMessage error={errors.area} />}
                 </div>
 
                 {/* Bedrooms */}
                 <div>
-                    <h3 className={`text-lg font-semibold mb-3 ${
-                        language === 'ar' ? 'font-arabic' : ''
-                    }`}>
+                    <h3 className={`text-lg font-semibold mb-3 ${language === 'ar' ? 'font-arabic' : ''
+                        }`}>
                         {t.bedrooms}
                     </h3>
                     <select
@@ -361,9 +496,8 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
 
                 {/* Location */}
                 <div>
-                    <h3 className={`text-lg font-semibold mb-3 ${
-                        language === 'ar' ? 'font-arabic' : ''
-                    }`}>
+                    <h3 className={`text-lg font-semibold mb-3 ${language === 'ar' ? 'font-arabic' : ''
+                        }`}>
                         {t.location}
                     </h3>
                     <select
@@ -385,10 +519,9 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
 
             {/* Features */}
             <div className="mt-6">
-                <h3 className={`text-lg font-semibold mb-3 ${
-                    language === 'ar' ? 'font-arabic' : ''
-                }`}>
-                   {t.amenities}
+                <h3 className={`text-lg font-semibold mb-3 ${language === 'ar' ? 'font-arabic' : ''
+                    }`}>
+                    {t.amenities}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {Object.entries(t.amenityOptions).map(([key, label]) => {
@@ -399,11 +532,10 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
                             <button
                                 key={key}
                                 onClick={() => handleFeatureToggle(key)}
-                                className={`flex items-center justify-center gap-2 p-2 rounded-md border ${
-                                    localFilters.features.includes(featureId)
-                                        ? 'bg-primary text-white border-primary'
-                                        : 'border-gray-300 hover:border-primary'
-                                }`}
+                                className={`flex items-center justify-center gap-2 p-2 rounded-md border ${localFilters.features.includes(featureId)
+                                    ? 'bg-primary text-white border-primary'
+                                    : 'border-gray-300 hover:border-primary'
+                                    }`}
                             >
                                 {localFilters.features.includes(featureId) && <FiCheck />}
                                 {label}
@@ -413,22 +545,29 @@ export default function PropertyFilters({ language, activeFilters = {}, onFilter
                 </div>
             </div>
 
-            {/* Reset Button */}
-            <div className="mt-6 flex justify-between">
-                <button
-                    onClick={resetFilters}
-                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900"
-                >
-                    <FiX />
-                    {t.reset}
-                </button>
+            {/* Reset and Apply Buttons */}
+            <div className="mt-6 flex flex-col gap-2">
+                {errors.general && (
+                    <div className="bg-red-50 p-2 rounded-md">
+                        <ErrorMessage error={errors.general} />
+                    </div>
+                )}
+                <div className="flex justify-between">
+                    <button
+                        onClick={resetFilters}
+                        className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900"
+                    >
+                        <FiX />
+                        {t.reset}
+                    </button>
 
-                <button
-                    onClick={handleApplyFilters}
-                    className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
-                >
-                    {t.apply}
-                </button>
+                    <button
+                        onClick={handleApplyFilters}
+                        className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+                    >
+                        {t.apply}
+                    </button>
+                </div>
             </div>
         </div>
     )

@@ -249,31 +249,39 @@ const propertyAPI = {
   },
 
   // Get available properties with filters
-  getAvailableProperties: async (filters = {}) => {
+  getAvailableProperties: async (params) => {
     try {
-      console.log('API Request Filters:', filters)
-      const response = await axiosInstance.get('/units', {
-        params: {
-          ...filters,
-          status: 'available',
-        },
-      })
-      console.log('API Response:', response.data)
-      return response.data
+      const queryString = params instanceof URLSearchParams 
+        ? params.toString()
+        : new URLSearchParams(params).toString();
+
+      const response = await axiosInstance.get(`/units?${queryString}`);
+      return response.data;
     } catch (error) {
-      console.error('Failed to fetch available properties:', error)
-      throw error.response?.data || error
+      if (error.response?.status === 404 && error.response?.data?.message === 'No data found') {
+        return {
+          success: true,
+          status: 200,
+          data: {
+            items: [],
+            total: 0,
+            currentPage: 1,
+            lastPage: 1,
+            perPage: 15
+          }
+        };
+      }
+      throw error;
     }
   },
 
   // Get property details
   getPropertyDetails: async (id) => {
     try {
-      const response = await axiosInstance.get(`/units/details/${id}`)
-      return response.data
+      const response = await axiosInstance.get(`/units/details/${id}`);
+      return response.data;
     } catch (error) {
-      console.error('Failed to fetch property details:', error)
-      throw error.response?.data || error
+      throw error.response?.data || error;
     }
   },
 
@@ -283,66 +291,55 @@ const propertyAPI = {
       const [typesResponse, featuresResponse] = await Promise.all([
         axiosInstance.get('/units/type'),
         axiosInstance.get('/categories'),
-      ])
+      ]);
       return {
         types: typesResponse.data,
         features: featuresResponse.data,
-      }
+      };
     } catch (error) {
-      console.error('Failed to fetch property filters:', error)
-      throw error.response?.data || error
+      throw error.response?.data || error;
     }
   },
 
-  // Update the getFeaturedProperties method
+  // Get featured properties
   getFeaturedProperties: async () => {
     try {
       const response = await axiosInstance.get('/units', {
         params: {
           status: 'accepted',
+          per_page: 3 // Limit to 3 items directly from API
         },
-      })
+      });
 
-      // Get properties from the response
-      const allProperties = response?.data?.data?.items || []
-      console.log('All properties:', allProperties)
-
-      if (allProperties.length === 0) {
-        return { success: true, data: [] }
+      const properties = response?.data?.data?.items || [];
+      
+      if (properties.length === 0) {
+        return { success: true, data: [] };
       }
 
       // Get today's seed
-      const dailySeed = getDailySeed()
-
-      // Sort properties using the daily seed
-      const sortedProperties = [...allProperties].sort((a, b) => {
-        // Use property IDs with the daily seed to create consistent random ordering
-        const randomA = seededRandom(parseInt(dailySeed + a.id))
-        const randomB = seededRandom(parseInt(dailySeed + b.id))
-        return randomA - randomB
-      })
-
-      // Take first 3 properties
-      const numberOfProperties = Math.min(3, sortedProperties.length)
-      const selectedProperties = sortedProperties
-        .slice(0, numberOfProperties)
-        .map((property) => ({
+      const dailySeed = getDailySeed();
+      
+      // Sort properties using the daily seed - only sort what we need
+      const selectedProperties = properties
+        .sort((a, b) => {
+          const randomA = seededRandom(parseInt(dailySeed + a.id));
+          const randomB = seededRandom(parseInt(dailySeed + b.id));
+          return randomA - randomB;
+        })
+        .slice(0, 3)
+        .map(property => ({
           ...property,
-          isNew:
-            new Date(property.created_at) >
-            new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          isFeatured: true,
-        }))
-
-      console.log('Selected properties for today:', selectedProperties)
+          isNew: new Date(property.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+          isFeatured: true
+        }));
 
       return {
         success: true,
-        data: selectedProperties,
-      }
+        data: selectedProperties
+      };
     } catch (error) {
-      console.error('Failed to fetch featured properties:', error)
-      throw error.response?.data || error
+      throw error.response?.data || error;
     }
   },
 
