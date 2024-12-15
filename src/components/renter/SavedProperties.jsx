@@ -1,68 +1,239 @@
-import { useState } from 'react'
-import { FiHeart, FiShare } from 'react-icons/fi'
+import React, { useState, useEffect } from 'react'
+import favoritesAPI from '../../services/favoritesAPI'
+import { FiHeart, FiMaximize } from 'react-icons/fi'
+import { IoBedOutline, IoWaterOutline, IoLocationOutline } from "react-icons/io5"
 import { useNavigate } from 'react-router-dom'
+import LoadingSpinner from '../shared/LoadingSpinner'
+import { toast } from 'react-hot-toast'
 
-export default function SavedProperties({ language }) {
+const translations = {
+  en: {
+    savedProperties: 'Saved Properties',
+    from: 'From',
+    sar: 'SAR',
+    viewDetails: 'View Details',
+    noSavedProperties: 'No saved properties yet',
+    browseProperties: 'Browse Properties',
+    viewAvailableProperties: 'View Available Properties',
+    failedToLoad: 'Failed to load saved properties',
+    removedFromFavorites: 'Property removed from favorites',
+    failedToUpdate: 'Failed to update favorites'
+  },
+  ar: {
+    savedProperties: 'العقارات المحفوظة',
+    from: 'من',
+    sar: 'ريال',
+    viewDetails: 'عرض التفاصيل',
+    noSavedProperties: 'لا توجد عقارات محفوظة',
+    browseProperties: 'تصفح العقارات',
+    viewAvailableProperties: 'عرض العقارات المتاحة',
+    failedToLoad: 'فشل تحميل العقارات المحفوظة',
+    removedFromFavorites: 'تمت إزالة العقار من المفضلة',
+    failedToUpdate: 'فشل تحديث المفضلة'
+  }
+}
+
+// Memoized Property Card Component
+const PropertyCard = React.memo(({ property, onRemoveFromFavorites, language }) => {
   const navigate = useNavigate()
-  const [savedProperties, setSavedProperties] = useState([
-    // Add mock saved properties
-  ])
+  const [favoriteLoading, setFavoriteLoading] = useState(false)
+  const t = translations[language]
 
-  const content = {
-    en: {
-      title: 'Saved Properties',
-      noProperties: 'No saved properties',
-      remove: 'Remove',
-      viewDetails: 'View Details'
-    },
-    ar: {
-      title: 'العقارات المحفوظة',
-      noProperties: 'لا توجد عقارات محفوظة',
-      remove: 'إزالة',
-      viewDetails: 'عرض التفاصيل'
+  const handleFavorite = async (e) => {
+    e.stopPropagation()
+    if (favoriteLoading) return
+
+    try {
+      setFavoriteLoading(true)
+      await favoritesAPI.removeFromFavorites(property.id)
+      onRemoveFromFavorites(property.id)
+      toast.success(t.removedFromFavorites)
+    } catch (error) {
+      console.error('Failed to remove from favorites:', error)
+      toast.error(t.failedToUpdate)
+    } finally {
+      setFavoriteLoading(false)
     }
   }
 
-  const t = content[language]
-
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h1 className={`text-2xl font-bold mb-6 ${language === 'ar' ? 'font-arabic' : ''}`}>
-        {t.title}
-      </h1>
+    <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
+      <div className="relative">
+        <img
+          src={property.images?.[0]?.url || 'https://placehold.co/600x400?text=No+Image'}
+          alt={property.title}
+          className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
+        />
+        <button
+          className={`absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-colors ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          onClick={handleFavorite}
+          disabled={favoriteLoading}
+        >
+          <FiHeart className="w-5 h-5 text-[#BE092B] fill-current" />
+        </button>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {savedProperties.map(property => (
-          <div
-            key={property.id}
-            className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-          >
-            <img
-              src={property.image}
-              alt={property.title}
-              className="w-full h-48 object-cover"
-            />
-            <div className="p-4">
-              <h3 className="font-semibold mb-2">{property.title}</h3>
-              <p className="text-primary font-bold mb-4">{property.price} SAR</p>
-              <div className="flex justify-between">
-                <button
-                  onClick={() => {/* Handle remove */}}
-                  className="text-sm text-red-600 hover:text-red-700"
-                >
-                  {t.remove}
-                </button>
-                <button
-                  onClick={() => navigate(`/properties/${property.id}`)}
-                  className="text-sm text-primary hover:text-primary-hover"
-                >
-                  {t.viewDetails}
-                </button>
+      <div className="p-6">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <h3 className="text-xl font-semibold line-clamp-2 text-gray-800">
+              {property.title}
+            </h3>
+          </div>
+          {property.address && (
+            <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-1">
+                <IoLocationOutline className="text-[#BE092B]" />
+                <span>{property.address}</span>
               </div>
             </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4 mb-4 text-gray-600">
+          {property.number_bedroom > 0 && (
+            <div className="flex items-center gap-1">
+              <IoBedOutline className="text-[#BE092B]" />
+              <span>{property.number_bedroom}</span>
+            </div>
+          )}
+          {property.number_bathroom > 0 && (
+            <div className="flex items-center gap-1">
+              <IoWaterOutline className="text-[#BE092B]" />
+              <span>{property.number_bathroom}</span>
+            </div>
+          )}
+          {property.area && (
+            <div className="flex items-center gap-1">
+              <FiMaximize className="text-[#BE092B]" />
+              <span>{property.area} m²</span>
+            </div>
+          )}
+        </div>
+
+        {property.features?.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {property.features.slice(0, 3).map(feature => (
+              <span
+                key={feature.id}
+                className="text-xs px-2 py-1 bg-gray-50 text-gray-600 rounded-full border border-gray-100"
+              >
+                {feature.name}
+              </span>
+            ))}
+            {property.features.length > 3 && (
+              <span className="text-xs text-gray-500">
+                +{property.features.length - 3}
+              </span>
+            )}
           </div>
+        )}
+
+        <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+          <div>
+            <span className="text-gray-500 text-sm">{t.from}</span>
+            <p className="text-[#BE092B] font-bold text-xl">
+              {property.price} {t.sar}
+            </p>
+          </div>
+          <button
+            onClick={() => navigate(`/properties/${property.id}`)}
+            className="px-4 py-2 bg-[#BE092B]/90 text-white rounded-lg hover:bg-[#8a1328] transition-colors"
+          >
+            {t.viewDetails}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+PropertyCard.displayName = 'PropertyCard'
+
+const SavedProperties = ({ language = 'en' }) => {
+  const navigate = useNavigate()
+  const [favorites, setFavorites] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const t = translations[language]
+
+  useEffect(() => {
+    const fetchSavedProperties = async () => {
+      try {
+        setLoading(true)
+        const response = await favoritesAPI.getFavorites()
+        setFavorites(response.data || [])
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching saved properties:', err)
+        setError(t.failedToLoad)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSavedProperties()
+  }, [language])
+
+  const handleRemoveFromFavorites = (unitId) => {
+    setFavorites((prev) => prev.filter((fav) => fav.id !== unitId))
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-600">
+        <p className="text-lg mb-4">{error}</p>
+        <button
+          onClick={() => navigate('/properties')}
+          className="text-theme hover:text-theme-dark transition-colors"
+        >
+          {t.viewAvailableProperties}
+        </button>
+      </div>
+    )
+  }
+
+  if (favorites.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-600">
+        <FiHeart className="w-16 h-16 mb-4 text-gray-400" />
+        <p className="text-lg mb-4">{t.noSavedProperties}</p>
+        <button
+          onClick={() => navigate('/properties')}
+          className="text-theme hover:text-theme-dark transition-colors"
+        >
+          {t.browseProperties}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className={`text-2xl font-semibold mb-6 ${language === 'ar' ? 'font-arabic' : ''}`}>
+        {t.savedProperties}
+      </h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {favorites.map((property) => (
+          <PropertyCard
+            key={property.id}
+            property={property}
+            onRemoveFromFavorites={handleRemoveFromFavorites}
+            language={language}
+          />
         ))}
       </div>
     </div>
   )
-} 
+}
+
+export default SavedProperties 

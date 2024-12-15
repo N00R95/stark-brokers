@@ -1,10 +1,12 @@
 import { useState, useEffect, memo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { propertyAPI } from '../../services/api'
+import favoritesAPI from '../../services/favoritesAPI'
 import PropertyFilters from './PropertyFilters'
 import { FiHeart, FiMaximize, FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi'
 import { IoBedOutline, IoWaterOutline, IoLocationOutline } from "react-icons/io5"
 import React from 'react';
+import { toast } from 'react-hot-toast';
 
 const content = {
     en: {
@@ -76,6 +78,39 @@ const PropertyCard = memo(({ property, language, onNavigate }) => {
     const t = content[language];
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [favoriteLoading, setFavoriteLoading] = useState(false);
+
+    const handleFavorite = async (e) => {
+        e.stopPropagation();
+        if (favoriteLoading) return;
+
+        try {
+            setFavoriteLoading(true);
+            if (isFavorite) {
+                const response = await favoritesAPI.removeFromFavorites(property.id);
+                if (response.success) {
+                    setIsFavorite(false);
+                    toast.success(language === 'ar' ? 'تم إزالة العقار من المفضلة' : 'Property removed from favorites');
+                }
+            } else {
+                const response = await favoritesAPI.addToFavorites(property.id);
+                if (response.success) {
+                    setIsFavorite(true);
+                    toast.success(language === 'ar' ? 'تم إضافة العقار إلى المفضلة' : 'Property added to favorites');
+                }
+            }
+        } catch (error) {
+            console.error('Failed to update favorite status:', error);
+            toast.error(
+                language === 'ar'
+                    ? 'حدث خطأ أثناء تحديث المفضلة'
+                    : 'Failed to update favorites'
+            );
+        } finally {
+            setFavoriteLoading(false);
+        }
+    };
 
     // Function to get optimized image URL based on screen size and device pixel ratio
     const getOptimizedImageUrl = useCallback((url, size = 'medium') => {
@@ -176,13 +211,11 @@ const PropertyCard = memo(({ property, language, onNavigate }) => {
 
                 {/* Favorite button */}
                 <button
-                    className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-colors z-10"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        // Handle favorite
-                    }}
+                    className={`absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-colors ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={handleFavorite}
+                    disabled={favoriteLoading}
                 >
-                    <FiHeart className="w-5 h-5 text-[#BE092B]" />
+                    <FiHeart className={`w-5 h-5 transition-colors ${isFavorite ? 'text-[#BE092B] fill-current' : 'text-[#BE092B]'}`} />
                 </button>
             </div>
 
@@ -412,7 +445,7 @@ export default function AvailableProperties({ language }) {
             } else {
                 setError(
                     language === 'ar'
-                        ? 'عذراً، حدث خطأ أثناء تحميل العقارات. يرجى المحاولة مرة أخرى.'
+                        ? 'عذراً، ��دث خطأ أثناء تحميل العقارات. يرجى المحاولة مرة أخرى.'
                         : 'Sorry, there was an error loading properties. Please try again.'
                 );
             }

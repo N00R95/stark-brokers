@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { propertyAPI } from '../../services/api'
+import favoritesAPI from '../../services/favoritesAPI'
 import { FiMaximize, FiMapPin, FiHeart, FiArrowLeft } from 'react-icons/fi'
 import { IoBedOutline, IoWaterOutline } from "react-icons/io5"
 import BookingForm from './BookingForm'
@@ -30,6 +31,7 @@ import {
   FaRoad,
   FaStore
 } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
 
 const content = {
   en: {
@@ -211,13 +213,25 @@ export default function PropertyDetails({ language }) {
   const handleFavorite = async () => {
     try {
       if (isFavorite) {
-        await propertyAPI.removeFromFavorites(id)
+        const response = await favoritesAPI.removeFromFavorites(property.id)
+        if (response.success) {
+          setIsFavorite(false)
+          toast.success(language === 'ar' ? 'تم إزالة العقار من المفضلة' : 'Property removed from favorites')
+        }
       } else {
-        await propertyAPI.addToFavorites(id)
+        const response = await favoritesAPI.addToFavorites(property.id)
+        if (response.success) {
+          setIsFavorite(true)
+          toast.success(language === 'ar' ? 'تم إضافة العقار إلى المفضلة' : 'Property added to favorites')
+        }
       }
-      setIsFavorite(!isFavorite)
     } catch (error) {
       console.error('Failed to update favorite status:', error)
+      toast.error(
+        language === 'ar'
+          ? 'حدث خطأ أثناء تحديث المفضلة'
+          : 'Failed to update favorites'
+      )
     }
   }
 

@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react'
-import { FiCalendar, FiClock, FiMapPin, FiCheck, FiX, FiChevronDown, FiHome } from 'react-icons/fi'
+import { FiCalendar, FiClock, FiMapPin, FiCheck, FiX, FiChevronDown, FiHome, FiUser } from 'react-icons/fi'
 import bookingAPI from '../../services/bookingAPI'
 import { toast } from 'react-hot-toast'
 
 // Custom Saudi Riyal Icon component
 const SaudiRiyalIcon = ({ className = '' }) => (
-  <svg 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
     className={`w-4 h-4 ${className}`}
   >
     <text x="5" y="17" fontSize="14" fontWeight="bold">﷼</text>
@@ -81,6 +81,7 @@ export default function TourRequests({ language }) {
         accepted: 'Accepted'
       },
       propertyInfo: 'Property Information',
+      renterInfo: 'Renter Information',
       confirmStatusChange: 'Are you sure you want to change the status to {status}?',
       errorLoading: 'Error loading requests',
       tryAgain: 'Try Again',
@@ -90,7 +91,8 @@ export default function TourRequests({ language }) {
       bathrooms: 'Bathrooms',
       area: 'Area',
       currency: 'SAR',
-      sqm: 'm²'
+      sqm: 'm²',
+      viewProperty: 'View Property'
     },
     ar: {
       title: 'طلبات الجولات',
@@ -104,6 +106,7 @@ export default function TourRequests({ language }) {
         accepted: 'مقبول'
       },
       propertyInfo: 'معلومات العقار',
+      renterInfo: 'معلومات المستأجر',
       confirmStatusChange: 'هل أنت متأكد أنك تريد تغيير الحالة إلى {status}؟',
       errorLoading: 'خطأ في تحميل الطلبات',
       tryAgain: 'حاول مرة أخرى',
@@ -113,7 +116,8 @@ export default function TourRequests({ language }) {
       bathrooms: 'الحمامات',
       area: 'المساحة',
       currency: 'ريال',
-      sqm: 'م²'
+      sqm: 'م²',
+      viewProperty: 'عرض العقار'
     }
   }
 
@@ -122,7 +126,6 @@ export default function TourRequests({ language }) {
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'confirmed':
-        return 'bg-green-100 text-green-800'
       case 'accepted':
         return 'bg-green-100 text-green-800'
       case 'rejected':
@@ -151,7 +154,6 @@ export default function TourRequests({ language }) {
     }
   }
 
-  // Available status transitions based on current status
   const getAvailableStatuses = (currentStatus) => {
     const allStatuses = ['pending', 'confirmed', 'rejected', 'accepted', 'cancelled']
     return allStatuses.filter(status => status !== currentStatus?.toLowerCase())
@@ -159,22 +161,37 @@ export default function TourRequests({ language }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[200px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+          <div className="grid grid-cols-1 gap-6">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="h-48 bg-gray-200"></div>
+                <div className="p-4">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[200px] text-center">
-        <p className="text-gray-600 mb-4">{error}</p>
-        <button
-          onClick={fetchTourRequests}
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
-        >
-          {t.tryAgain}
-        </button>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex flex-col items-center justify-center min-h-[200px] text-center">
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={fetchTourRequests}
+            className="px-4 py-2 bg-[#BE092B] text-white rounded-lg hover:bg-[#8a1328] transition-colors"
+          >
+            {t.tryAgain}
+          </button>
+        </div>
       </div>
     )
   }
@@ -194,61 +211,69 @@ export default function TourRequests({ language }) {
             return (
               <div
                 key={request.booking_id}
-                className="border border-gray-200 rounded-lg overflow-hidden hover:border-primary transition-colors"
+                className="border border-gray-200 rounded-lg overflow-hidden hover:border-[#BE092B] transition-colors"
               >
-                <div className="p-4">
-                  {/* Status Badge and Menu */}
-                  <div className="flex justify-end mb-4 items-center gap-4">
-                    <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(request.status)}`}>
-                      {t.status[request.status?.toLowerCase()] || request.status}
-                    </span>
-
-                    <div className="relative">
-                      <button
-                        onClick={() => setOpenStatusMenu(openStatusMenu === request.booking_id ? null : request.booking_id)}
-                        className="flex items-center gap-2 px-3 py-1 text-sm text-gray-600 hover:text-gray-900 border rounded-md"
-                      >
-                        {t.changeStatus}
-                        <FiChevronDown className={`transition-transform ${openStatusMenu === request.booking_id ? 'rotate-180' : ''}`} />
-                      </button>
-
-                      {openStatusMenu === request.booking_id && (
-                        <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg z-10 border">
-                          {getAvailableStatuses(request.status).map(status => (
-                            <button
-                              key={status}
-                              onClick={() => handleStatusChange(request.booking_id, status)}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              {t.status[status]}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                <div className="flex flex-col md:flex-row">
+                  {/* Property Image */}
+                  <div className="w-full md:w-48 h-48 md:h-auto">
+                    <img
+                      src={details?.unit?.images?.[0]?.url || 'https://placehold.co/600x400?text=No+Image'}
+                      alt={request.unit_title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
-                  {/* Property Information */}
-                  <div>
-                    <h3 className={`font-semibold mb-4 ${language === 'ar' ? 'font-arabic' : ''}`}>
-                      {t.propertyInfo}
-                    </h3>
-                    <div className="space-y-3">
-                      <p className="font-medium">{request.unit_title}</p>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <FiMapPin />
-                        <span>{request.address}</span>
+                  {/* Request Details */}
+                  <div className="flex-1 p-4">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-semibold text-lg mb-2">{request.unit_title}</h3>
+                        <div className="flex items-center gap-2 text-gray-600 text-sm">
+                          <FiUser className="text-[#BE092B]" />
+                          <span>{request.renter_name}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <FiCalendar />
+                      <div className="flex items-center gap-3">
+                        <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(request.status)}`}>
+                          {t.status[request.status?.toLowerCase()] || request.status}
+                        </span>
+                        <div className="relative">
+                          <button
+                            onClick={() => setOpenStatusMenu(openStatusMenu === request.booking_id ? null : request.booking_id)}
+                            className="flex items-center gap-2 px-3 py-1 text-sm text-gray-600 hover:text-gray-900 border rounded-md"
+                          >
+                            {t.changeStatus}
+                            <FiChevronDown className={`transition-transform ${openStatusMenu === request.booking_id ? 'rotate-180' : ''}`} />
+                          </button>
+
+                          {openStatusMenu === request.booking_id && (
+                            <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg z-10 border">
+                              {getAvailableStatuses(request.status).map(status => (
+                                <button
+                                  key={status}
+                                  onClick={() => handleStatusChange(request.booking_id, status)}
+                                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  {t.status[status]}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
+                      <div className="flex items-center gap-2">
+                        <FiCalendar className="text-[#BE092B]" />
                         <span>
                           {new Date(request.booking_date).toLocaleDateString(
                             language === 'ar' ? 'ar-SA' : 'en-US'
                           )}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <FiClock />
+                      <div className="flex items-center gap-2">
+                        <FiClock className="text-[#BE092B]" />
                         <span>
                           {new Date(request.booking_date).toLocaleTimeString(
                             language === 'ar' ? 'ar-SA' : 'en-US',
@@ -256,35 +281,43 @@ export default function TourRequests({ language }) {
                           )}
                         </span>
                       </div>
-                      {details?.unit && (
-                        <>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <SaudiRiyalIcon />
-                            <span>{details.unit.price} {t.currency}</span>
+                      <div className="flex items-center gap-2">
+                        <FiMapPin className="text-[#BE092B]" />
+                        <span>{request.address}</span>
+                      </div>
+                    </div>
+
+                    {details?.unit && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-4">
+                        <div className="flex items-center gap-2">
+                          <SaudiRiyalIcon className="text-[#BE092B]" />
+                          <span>{details.unit.price} {t.currency}</span>
+                        </div>
+                        {details.unit.number_bedroom > 0 && (
+                          <div>
+                            <span className="font-medium">{details.unit.number_bedroom}</span> {t.bedrooms}
                           </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <FiHome />
-                            <span>{details.unit.type}</span>
+                        )}
+                        {details.unit.number_bathroom > 0 && (
+                          <div>
+                            <span className="font-medium">{details.unit.number_bathroom}</span> {t.bathrooms}
                           </div>
-                          <div className="grid grid-cols-3 gap-4 mt-2">
-                            {details.unit.number_bedroom && (
-                              <div className="text-sm text-gray-600">
-                                <span className="font-medium">{details.unit.number_bedroom}</span> {t.bedrooms}
-                              </div>
-                            )}
-                            {details.unit.number_bathroom && (
-                              <div className="text-sm text-gray-600">
-                                <span className="font-medium">{details.unit.number_bathroom}</span> {t.bathrooms}
-                              </div>
-                            )}
-                            {details.unit.area && (
-                              <div className="text-sm text-gray-600">
-                                <span className="font-medium">{details.unit.area}</span> {t.sqm}
-                              </div>
-                            )}
+                        )}
+                        {details.unit.area && (
+                          <div>
+                            <span className="font-medium">{details.unit.area}</span> {t.sqm}
                           </div>
-                        </>
-                      )}
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-4 border-t border-gray-100">
+                      <button
+                        onClick={() => window.location.href = `/properties/${request.unit_id}`}
+                        className="px-4 py-2 bg-[#BE092B]/90 text-white rounded-lg hover:bg-[#8a1328] transition-colors"
+                      >
+                        {t.viewProperty}
+                      </button>
                     </div>
                   </div>
                 </div>
