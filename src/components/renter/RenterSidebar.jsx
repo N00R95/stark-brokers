@@ -6,13 +6,13 @@ export default function RenterSidebar({ language }) {
     en: [
       { icon: <FiUser />, text: 'My Profile', path: '/renter/profile' },
       { icon: <FiCalendar />, text: 'My Tours', path: '/renter/tours' },
-      { icon: <FiHome />, text: 'My Bookings', path: '/renter/bookings' },
+      // { icon: <FiHome />, text: 'My Bookings', path: '/renter/bookings' },
       { icon: <FiHeart />, text: 'Saved Properties', path: '/renter/saved' },
     ],
     ar: [
       { icon: <FiUser />, text: 'ملفي الشخصي', path: '/renter/profile' },
       { icon: <FiCalendar />, text: 'جولاتي', path: '/renter/tours' },
-      { icon: <FiHome />, text: 'حجوزاتي', path: '/renter/bookings' },
+      // { icon: <FiHome />, text: 'حجوزاتي', path: '/renter/bookings' },
       { icon: <FiHeart />, text: 'العقارات المحفوظة', path: '/renter/saved' },
     ]
   }
@@ -25,10 +25,9 @@ export default function RenterSidebar({ language }) {
             key={index}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                isActive
-                  ? 'bg-primary text-white'
-                  : 'text-gray-600 hover:bg-gray-50'
+              `flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${isActive
+                ? 'bg-primary text-white'
+                : 'text-gray-600 hover:bg-gray-50'
               }`
             }
           >
