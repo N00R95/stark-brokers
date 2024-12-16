@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import PropTypes from 'prop-types';
 import { HiHome, HiUserGroup, HiUserCircle } from 'react-icons/hi';
 import { BiCategory } from 'react-icons/bi';
 import { FaMapMarkedAlt } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo-nav.jpg';
 
-function Navbar({ language, setLanguage }) {
+function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showLoginOptions, setShowLoginOptions] = useState(false);
   const { user, logout } = useAuth();
+  const { language, setLanguage } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -45,9 +46,7 @@ function Navbar({ language, setLanguage }) {
       renter: [
         { text: 'My Profile', path: '/renter/profile' },
         { text: 'My Tours', path: '/renter/tours' },
-        // { text: 'My Bookings', path: '/renter/bookings' },
         { text: 'Saved Properties', path: '/renter/saved' },
-        // { text: 'Settings', path: '/settings' },
         { text: 'Logout', action: handleLogout }
       ],
       owner: [
@@ -55,7 +54,6 @@ function Navbar({ language, setLanguage }) {
         { text: 'My Properties', path: '/owner/properties' },
         { text: 'Add Property', path: '/owner/properties/add' },
         { text: 'Tour Requests', path: '/owner/requests' },
-        // { text: 'Settings', path: '/owner/settings' },
         { text: 'Logout', action: handleLogout }
       ]
     },
@@ -63,9 +61,7 @@ function Navbar({ language, setLanguage }) {
       renter: [
         { text: 'ملفي الشخصي', path: '/renter/profile' },
         { text: 'جولاتي', path: '/renter/tours' },
-        // { text: 'حجوزاتي', path: '/renter/bookings' },
         { text: 'العقارات المحفوظة', path: '/renter/saved' },
-        // { text: 'الإعدادات', path: '/settings' },
         { text: 'تسجيل الخروج', action: handleLogout }
       ],
       owner: [
@@ -73,7 +69,6 @@ function Navbar({ language, setLanguage }) {
         { text: 'عقاراتي', path: '/owner/properties' },
         { text: 'إضافة عقار', path: '/owner/properties/add' },
         { text: 'طلبات الجولات', path: '/owner/requests' },
-        // { text: 'الإعدادات', path: '/owner/settings' },
         { text: 'تسجيل الخروج', action: handleLogout }
       ]
     }
@@ -88,7 +83,6 @@ function Navbar({ language, setLanguage }) {
     }
   };
 
-  // Check if user exists and has a valid type before accessing menu items
   const getUserMenuItems = () => {
     if (!user || !user.type || !userMenuItems[language][user.type]) {
       return [];
@@ -97,7 +91,7 @@ function Navbar({ language, setLanguage }) {
   };
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <nav className={`bg-white shadow-md sticky top-0 z-50 ${language === 'ar' ? 'font-arabic' : ''}`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Language Toggle - Left */}
@@ -134,7 +128,7 @@ function Navbar({ language, setLanguage }) {
                   }`}
               >
                 {item.icon}
-                <span className={language === 'ar' ? 'font-arabic' : ''}>
+                <span>
                   {item.text}
                 </span>
               </Link>
@@ -149,7 +143,7 @@ function Navbar({ language, setLanguage }) {
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                   className="flex items-center gap-2 focus:outline-none"
                 >
-                  <span className={`text-sm truncate max-w-[100px] ${language === 'ar' ? 'font-arabic' : ''}`}>
+                  <span className="text-sm truncate max-w-[100px]">
                     {user.full_name}
                   </span>
                   <HiUserCircle className="w-8 h-8 text-gray-600" />
@@ -241,7 +235,7 @@ function Navbar({ language, setLanguage }) {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.icon}
-                  <span className={language === 'ar' ? 'font-arabic' : ''}>
+                  <span>
                     {item.text}
                   </span>
                 </Link>
@@ -253,10 +247,5 @@ function Navbar({ language, setLanguage }) {
     </nav>
   );
 }
-
-Navbar.propTypes = {
-  language: PropTypes.string.isRequired,
-  setLanguage: PropTypes.func.isRequired,
-};
 
 export default Navbar;

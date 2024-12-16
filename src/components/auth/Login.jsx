@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { FiPhone, FiLock } from 'react-icons/fi'
 import { formatPhoneNumber, validateSaudiPhone } from '../../utils/phoneUtils'
+import { toast } from 'react-hot-toast'
 
 export default function Login({ language, userType }) {
   const [step, setStep] = useState('phone') // 'phone' or 'otp'
@@ -10,7 +11,7 @@ export default function Login({ language, userType }) {
   const [otp, setOtp] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  
+
   const { login, verifyOTP } = useAuth()
   const navigate = useNavigate()
 
@@ -37,7 +38,7 @@ export default function Login({ language, userType }) {
       otp: 'رمز التحقق',
       sendOtp: 'إرسال رمز التحقق',
       verifyOtp: 'تحقق من الرمز',
-      registerLink: 'ليس لديك حساب؟ سجل الآن',
+      registerLink: 'ليس لديك حساب سجل الآن',
       phoneRequired: 'رقم الهاتف مطلوب',
       phoneInvalid: 'الرجاء إدخال رقم هاتف صحيح',
       otpRequired: 'رمز التحقق مطلوب',
@@ -54,13 +55,13 @@ export default function Login({ language, userType }) {
       setError(t.phoneRequired)
       return false
     }
-    
+
     const formattedPhone = formatPhoneNumber(phoneNumber);
     if (!validateSaudiPhone(formattedPhone)) {
       setError(t.phoneInvalid)
       return false
     }
-    
+
     return true
   }
 
@@ -79,7 +80,7 @@ export default function Login({ language, userType }) {
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     if (!validatePhone()) return;
 
     setIsLoading(true);
@@ -94,7 +95,7 @@ export default function Login({ language, userType }) {
         phone: formattedPhone,
         type: userType
       });
-      
+
       if (response.success) {
         setStep('otp');
         // Store data for OTP verification
@@ -113,7 +114,7 @@ export default function Login({ language, userType }) {
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
-    
+
     try {
       setIsLoading(true);
       setError('');
@@ -133,7 +134,10 @@ export default function Login({ language, userType }) {
         // Clean up temporary storage
         localStorage.removeItem('auth_phone');
         localStorage.removeItem('auth_type');
-        
+
+        // Show success message
+        toast.success(language === 'ar' ? 'تم تسجيل الدخول بنجاح' : 'Logged in successfully');
+
         // Navigate to appropriate dashboard
         const redirectPath = `/${userType}/profile`;
         navigate(redirectPath);
@@ -153,9 +157,8 @@ export default function Login({ language, userType }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className={`text-center text-3xl font-extrabold text-gray-900 ${
-          language === 'ar' ? 'font-arabic' : ''
-        }`}>
+        <h2 className={`text-center text-3xl font-extrabold text-gray-900 ${language === 'ar' ? 'font-arabic' : ''
+          }`}>
           {userType === 'renter' ? t.renterTitle : t.ownerTitle}
         </h2>
       </div>
@@ -218,9 +221,8 @@ export default function Login({ language, userType }) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${
-                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
               >
                 {isLoading ? '...' : step === 'phone' ? t.sendOtp : t.verifyOtp}
               </button>

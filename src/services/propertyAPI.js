@@ -71,11 +71,32 @@ const propertyAPI = {
   },
 
   // Get owner's properties/units
-  getOwnerProperties: async () => {
+  getOwnerProperties: async (page = 1) => {
     try {
-      const response = await axiosInstance.get('/units/owner-units')
+      const response = await axiosInstance.get('/units/owner-units', {
+        params: {
+          page,
+          per_page: 15,
+        },
+      })
       return response.data
     } catch (error) {
+      if (
+        error.response?.status === 404 &&
+        error.response?.data?.message === 'No data found'
+      ) {
+        return {
+          success: true,
+          status: 200,
+          data: {
+            items: [],
+            total: 0,
+            currentPage: 1,
+            lastPage: 1,
+            perPage: 15,
+          },
+        }
+      }
       throw error.response?.data || error.message
     }
   },

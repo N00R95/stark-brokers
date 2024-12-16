@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-hot-toast'
 import { FiCalendar, FiClock, FiMapPin, FiCheck, FiX, FiTrash2, FiEye } from 'react-icons/fi'
 import bookingAPI from '../../services/bookingAPI'
 
@@ -22,18 +21,17 @@ export default function Tours({ language }) {
       const response = await bookingAPI.getBookingRequests()
 
       if (response?.success && response?.data?.items) {
+        console.log('Tour requests:', response.data.items)
         setRequests(response.data.items)
         response.data.items.forEach(request => {
           fetchRequestDetails(request.booking_id)
         })
       } else {
         setRequests([])
-        toast.error('Invalid response format from server')
       }
     } catch (error) {
       console.error('Failed to fetch tour requests:', error)
-      setError(error.message || 'Failed to fetch tour requests')
-      toast.error(error.message || 'Failed to fetch tour requests')
+      setError(t.errorFetching)
     } finally {
       setLoading(false)
     }
@@ -54,19 +52,22 @@ export default function Tours({ language }) {
   }
 
   const handleDelete = async (bookingId) => {
-    if (window.confirm(t.confirmDelete)) {
-      try {
-        const response = await bookingAPI.deleteBookingRequest(bookingId)
-        if (response.success) {
-          toast.success(t.deleteSuccess)
-          fetchTourRequests()
-        }
-      } catch (error) {
-        console.error('Failed to delete booking:', error)
-        toast.error(error.message || t.deleteError)
-      }
+    if (!window.confirm(t.confirmDelete)) {
+      return;
     }
-  }
+
+    try {
+      const response = await bookingAPI.deleteBookingRequest(bookingId);
+
+      if (response.success) {
+        setRequests(prevRequests => prevRequests.filter(request => request.booking_id !== bookingId));
+      } else {
+        throw new Error(response.message || t.deleteError);
+      }
+    } catch (error) {
+      console.error('Failed to delete booking:', error);
+    }
+  };
 
   const handleViewProperty = (unitId) => {
     navigate(`/properties/${unitId}`)
@@ -87,7 +88,8 @@ export default function Tours({ language }) {
       viewProperty: 'View Property',
       confirmDelete: 'Are you sure you want to cancel this tour request?',
       deleteSuccess: 'Tour request cancelled successfully',
-      deleteError: 'Failed to cancel tour request'
+      deleteError: 'Failed to cancel tour request',
+      errorFetching: 'Failed to fetch tour requests'
     },
     ar: {
       title: 'طلبات جولاتي',
@@ -103,7 +105,8 @@ export default function Tours({ language }) {
       viewProperty: 'عرض العقار',
       confirmDelete: 'هل أنت متأكد من رغبتك في إلغاء طلب الجولة هذا؟',
       deleteSuccess: 'تم إلغاء طلب الجولة بنجاح',
-      deleteError: 'فشل في إلغاء طلب الجولة'
+      deleteError: 'فشل في إلغاء طلب الجولة',
+      errorFetching: 'فشل في تحميل طلبات الجولات'
     }
   }
 
@@ -177,7 +180,7 @@ export default function Tours({ language }) {
               >
                 <div className="flex flex-col md:flex-row">
                   {/* Property Image */}
-                  <div className="w-full md:w-48 h-48">
+                  <div className="w-full md:w-40 h-40 md:h-auto">
                     <img
                       src={details?.unit?.images?.[0]?.url || 'https://placehold.co/600x400/png/white?text=Property+Image'}
                       alt={details?.unit?.title}
@@ -188,14 +191,14 @@ export default function Tours({ language }) {
                   {/* Booking Details */}
                   <div className="flex-1 p-4">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-lg">{details?.unit?.title || 'Loading...'}</h3>
+                      <h3 className="font-semibold">{details?.unit?.title || 'Loading...'}</h3>
                       <span className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${getStatusColor(request.status)}`}>
                         {getStatusIcon(request.status)}
                         {t.status[request.status]}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600 mb-3">
                       <div className="flex items-center gap-2">
                         <FiCalendar className="text-gray-400" />
                         <span>{new Date(bookingDate).toLocaleDateString()}</span>
@@ -210,12 +213,12 @@ export default function Tours({ language }) {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap justify-between items-center mt-4 pt-4 border-t border-gray-100">
-                      <div className="text-primary font-bold text-lg">
+                    <div className="flex flex-wrap justify-between items-center mt-2 pt-2 border-t border-gray-100">
+                      <div className="text-primary font-bold text-sm">
                         {details?.unit?.price} SAR
                       </div>
                       <div className="flex gap-3">
-                        {request.status === 'pending' && (
+                        {request.status !== 'cancelled' && request.status !== 'rejected' && (
                           <button
                             onClick={() => handleDelete(request.booking_id)}
                             className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
@@ -225,7 +228,7 @@ export default function Tours({ language }) {
                           </button>
                         )}
                         <button
-                          onClick={() => handleViewProperty(details?.unit?.id)}
+                          onClick={() => handleViewProperty(request.unit_id)}
                           className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
                         >
                           <FiEye className="w-4 h-4" />

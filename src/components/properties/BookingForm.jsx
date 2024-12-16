@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { FiCalendar, FiClock } from 'react-icons/fi'
 import bookingAPI from '../../services/bookingAPI'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-hot-toast'
 
 export default function BookingForm({
   language,
@@ -18,6 +20,7 @@ export default function BookingForm({
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
   // Get today's date in YYYY-MM-DD format for min date
   const today = new Date().toISOString().split('T')[0]
@@ -49,7 +52,8 @@ export default function BookingForm({
         generic: 'Something went wrong. Please try again.',
         invalidDate: 'Please select a valid date and time.',
         pastDate: 'Selected date and time must be in the future.',
-        unavailable: 'This time slot is not available. Please select another time.'
+        unavailable: 'This time slot is not available. Please select another time.',
+        ownerBooking: 'Property owners cannot book tours. Please switch to a renter account.'
       }
     },
     ar: {
@@ -67,64 +71,118 @@ export default function BookingForm({
         generic: 'حدث خطأ. يرجى المحاولة مرة أخرى.',
         invalidDate: 'يرجى اختيار تاريخ ووقت صحيحين.',
         pastDate: 'يجب أن يكون التاريخ والوقت المحددين في المستقبل.',
-        unavailable: 'هذا الموعد غير متاح. يرجى اختيار وقت آخر.'
+        unavailable: 'هذا الموعد غير متاح. يرجى اختيار وقت آخر.',
+        ownerBooking: 'لا يمكن لمالكي العقارات حجز جولات. يرجى التبديل إلى حساب مستأجر.'
       }
     }
   }
 
   const t = content[language]
 
+  const validateDateTime = () => {
+    // Validate date and time are selected
+    if (!formData.date || !formData.time) {
+      setError(t.error.invalidDate)
+      return false
+    }
+
+    // Combine date and time into booking_date
+    const bookingDate = new Date(`${formData.date}T${formData.time}:00`)
+    const now = new Date()
+
+    // Check if selected date/time is in the past
+    if (bookingDate <= now) {
+      setError(t.error.pastDate)
+      return false
+    }
+
+    return true
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
-    setLoading(true)
 
+    // Check if user is logged in
+    const token = localStorage.getItem('token')
+    if (!token) {
+      toast.error(
+        language === 'ar'
+          ? 'يجب تسجيل الدخول لحجز جولة'
+          : 'Please login to book a tour'
+      )
+      // Show login/register options after a short delay
+      setTimeout(() => {
+        const shouldLogin = window.confirm(
+          language === 'ar'
+            ? 'هل تريد تسجيل الدخول أو إنشاء حساب جديد؟'
+            : 'Would you like to login or create an account?'
+        )
+        if (shouldLogin) {
+          onClose() // Close the booking form
+          navigate('/login/renter')
+        }
+      }, 1000)
+      return
+    }
+
+    // Check if user is an owner
     try {
-      // Validate date and time
-      if (!formData.date || !formData.time) {
-        throw new Error('invalidDate')
+      const userData = JSON.parse(localStorage.getItem('user'))
+      if (userData?.type === 'owner') {
+        toast.error(
+          language === 'ar'
+            ? 'لا يمكن لمالكي العقارات حجز جولات'
+            : 'Property owners cannot book tours'
+        )
+        setTimeout(() => {
+          const shouldSwitch = window.confirm(
+            language === 'ar'
+              ? 'هل تريد التبديل إلى حساب مستأجر؟'
+              : 'Would you like to switch to a renter account?'
+          )
+          if (shouldSwitch) {
+            onClose() // Close the booking form
+            navigate('/login/renter')
+          }
+        }, 1000)
+        return
       }
+    } catch (error) {
+      console.error('Error checking user type:', error)
+    }
 
-      // Combine date and time into booking_date
+    if (!validateDateTime()) return
+
+    setLoading(true)
+    try {
+      // Format the date and time as required by the API (YYYY-MM-DD HH:mm:ss)
       const bookingDate = new Date(`${formData.date}T${formData.time}:00`)
-      const now = new Date()
+      const formattedDate = bookingDate.toISOString().slice(0, 19).replace('T', ' ')
 
-      // Check if selected date/time is in the past
-      if (bookingDate <= now) {
-        throw new Error('pastDate')
+      const bookingData = {
+        unit_id: property.id,
+        booking_date: formattedDate
       }
-
-      // Format datetime for API
-      const booking_date = bookingDate.toISOString().slice(0, 19).replace('T', ' ')
 
       if (isReschedule && onSubmit) {
-        await onSubmit(formData.date, formData.time)
+        await onSubmit(bookingData)
       } else {
-        // Create new booking request
-        const formDataToSend = new URLSearchParams()
-        formDataToSend.append('unit_id', property.id)
-        formDataToSend.append('booking_date', booking_date)
-
-        const response = await bookingAPI.createBookingRequest(Object.fromEntries(formDataToSend))
-
-        if (!response.success) {
-          throw new Error(response.message || 'generic')
+        const response = await bookingAPI.createBookingRequest(bookingData)
+        if (response.success) {
+          setIsSubmitted(true)
+          toast.success(t.success)
+          // Close form after success
+          setTimeout(() => {
+            onClose()
+          }, 2000)
+        } else {
+          throw new Error(response.message || t.error.generic)
         }
       }
-
-      setIsSubmitted(true)
-
-      // Close form after success
-      setTimeout(() => {
-        onClose()
-      }, 2000)
-    } catch (error) {
-      console.error('Failed to schedule tour:', error)
-      setError(
-        t.error[error.message] ||
-        error.response?.data?.message ||
-        t.error.generic
-      )
+    } catch (err) {
+      console.error('Booking error:', err)
+      setError(err.message || t.error.generic)
     } finally {
       setLoading(false)
     }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiEdit2, FiTrash2, FiEye } from 'react-icons/fi'
+import { FiEdit2, FiTrash2, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { propertyAPI } from '../../services/api'
 
 const PropertyCard = ({ property, onDelete, onStatusUpdate, translations }) => {
@@ -15,6 +15,12 @@ const PropertyCard = ({ property, onDelete, onStatusUpdate, translations }) => {
 
   const handleEdit = () => {
     navigate(`/owner/properties/edit/${property.id}`);
+  };
+
+  // Group features by category
+  const groupedFeatures = {
+    amenities: property.features?.filter(f => f.id <= 19) || [],
+    additionalFeatures: property.features?.filter(f => f.id >= 20) || []
   };
 
   return (
@@ -52,16 +58,16 @@ const PropertyCard = ({ property, onDelete, onStatusUpdate, translations }) => {
             <p className="font-medium">{property.area} {translations.sqm}</p>
           </div>
           <div>
-            <span className="text-sm text-gray-500">{translations.columns.price}</span>
+            <span className="text-sm text-gray-500">{translations.price || 'Price'}</span>
             <p className="font-medium">{property.price} {translations.currency}</p>
           </div>
-          {property.number_bedroom !== undefined && (
+          {property.number_bedroom > 0 && (
             <div>
               <span className="text-sm text-gray-500">{translations.bedrooms}</span>
               <p className="font-medium">{property.number_bedroom}</p>
             </div>
           )}
-          {property.number_bathroom !== undefined && (
+          {property.number_bathroom > 0 && (
             <div>
               <span className="text-sm text-gray-500">{translations.bathrooms}</span>
               <p className="font-medium">{property.number_bathroom}</p>
@@ -69,20 +75,42 @@ const PropertyCard = ({ property, onDelete, onStatusUpdate, translations }) => {
           )}
         </div>
 
-        {/* Features */}
+        {/* Features by Category */}
         {property.features?.length > 0 && (
-          <div>
-            <h4 className="font-medium mb-2">{translations.features}</h4>
-            <div className="flex flex-wrap gap-2">
-              {property.features.map(feature => (
-                <div
-                  key={feature.id}
-                  className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
-                >
-                  {translations.amenities[feature.name.toLowerCase()] || feature.name}
+          <div className="space-y-4">
+            {/* Amenities */}
+            {groupedFeatures.amenities.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-2">{translations.categories.amenities}</h4>
+                <div className="flex flex-wrap gap-2">
+                  {groupedFeatures.amenities.map(feature => (
+                    <div
+                      key={feature.id}
+                      className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
+                    >
+                      {translations.amenities[feature.name.toLowerCase()] || feature.name}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            {/* Additional Features */}
+            {groupedFeatures.additionalFeatures.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-2">{translations.categories.additionalFeatures}</h4>
+                <div className="flex flex-wrap gap-2">
+                  {groupedFeatures.additionalFeatures.map(feature => (
+                    <div
+                      key={feature.id}
+                      className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
+                    >
+                      {translations.amenities[feature.name.toLowerCase()] || feature.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -119,6 +147,12 @@ export default function MyProperties({ language }) {
   const navigate = useNavigate()
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    lastPage: 1,
+    total: 0,
+    perPage: 15
+  })
 
   const content = {
     en: {
@@ -126,19 +160,32 @@ export default function MyProperties({ language }) {
       addProperty: 'Add Property',
       noProperties: 'No properties found',
       deleteConfirm: 'Are you sure you want to delete this property?',
-      confirmStatusUpdate: 'Are you sure you want to change the status to',
-      status: {
-        available: 'Available',
-        booked: 'Booked'
-      },
+      view: 'View Property',
+      edit: 'Edit',
+      delete: 'Delete',
       area: 'Area',
-      sqm: 'm²',
       bedrooms: 'Bedrooms',
       bathrooms: 'Bathrooms',
       features: 'Features',
       currency: 'SAR',
-      columns: {
-        price: 'Price'
+      sqm: 'm²',
+      price: 'Price',
+      status: {
+        available: 'Available',
+        booked: 'Booked'
+      },
+      categories: {
+        amenities: 'Amenities',
+        additionalFeatures: 'Additional Features'
+      },
+      confirmStatusUpdate: 'Are you sure you want to change the status to',
+      pagination: {
+        showing: 'Showing',
+        of: 'of',
+        properties: 'properties',
+        page: 'Page',
+        next: 'Next',
+        previous: 'Previous'
       },
       amenities: {
         'parking': 'Parking',
@@ -172,19 +219,32 @@ export default function MyProperties({ language }) {
       addProperty: 'إضافة عقار',
       noProperties: 'لا توجد عقارات',
       deleteConfirm: 'هل أنت متأكد من حذف هذا العقار؟',
-      confirmStatusUpdate: 'هل أنت متأكد من تغيير الحالة إلى',
+      view: 'عرض العقار',
+      edit: 'تعديل',
+      delete: 'حذف',
+      area: 'المساحة',
+      bedrooms: 'غرف النوم',
+      bathrooms: 'الحمامات',
+      features: 'المميزات',
+      currency: 'ريال',
+      sqm: 'م²',
+      price: 'السعر',
       status: {
         available: 'متاح',
         booked: 'محجوز'
       },
-      area: 'المساحة',
-      sqm: 'م²',
-      bedrooms: 'غرف النوم',
-      bathrooms: 'دورات المياه',
-      features: 'المميزات',
-      currency: 'ريال',
-      columns: {
-        price: 'السعر'
+      categories: {
+        amenities: 'المرافق',
+        additionalFeatures: 'مميزات إضافية'
+      },
+      confirmStatusUpdate: 'هل أنت متأكد من تغيير الحالة إلى',
+      pagination: {
+        showing: 'عرض',
+        of: 'من',
+        properties: 'عقار',
+        page: 'صفحة',
+        next: 'التالي',
+        previous: 'السابق'
       },
       amenities: {
         'parking': 'موقف سيارات',
@@ -219,21 +279,33 @@ export default function MyProperties({ language }) {
 
   useEffect(() => {
     fetchProperties()
-  }, [])
+  }, [pagination.currentPage])
 
   const fetchProperties = async () => {
     try {
       setLoading(true)
-      const response = await propertyAPI.getOwnerProperties()
+      const response = await propertyAPI.getOwnerProperties(pagination.currentPage)
       console.log('Properties response:', response)
 
-      if (response?.data?.items) {
+      if (response?.data) {
         setProperties(response.data.items)
+        setPagination({
+          currentPage: response.data.currentPage,
+          lastPage: response.data.lastPage,
+          total: response.data.total,
+          perPage: response.data.perPage
+        })
       }
     } catch (error) {
       console.error('Failed to fetch properties:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.lastPage) {
+      setPagination(prev => ({ ...prev, currentPage: newPage }))
     }
   }
 
@@ -300,17 +372,46 @@ export default function MyProperties({ language }) {
           <p>{t.noProperties}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {properties.map(property => (
-            <PropertyCard
-              key={property.id}
-              property={property}
-              onDelete={handleDelete}
-              onStatusUpdate={handleBookingStatusUpdate}
-              translations={t}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {properties.map(property => (
+              <PropertyCard
+                key={property.id}
+                property={property}
+                onDelete={handleDelete}
+                onStatusUpdate={handleBookingStatusUpdate}
+                translations={t}
+              />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-600">
+            <div>
+              {t.pagination.showing} {((pagination.currentPage - 1) * pagination.perPage) + 1}-
+              {Math.min(pagination.currentPage * pagination.perPage, pagination.total)} {t.pagination.of} {pagination.total} {t.pagination.properties}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={pagination.currentPage === 1}
+                className="p-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white"
+              >
+                <FiChevronLeft className={language === 'ar' ? 'rotate-180' : ''} />
+              </button>
+              <span>
+                {t.pagination.page} {pagination.currentPage} {t.pagination.of} {pagination.lastPage}
+              </span>
+              <button
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={pagination.currentPage === pagination.lastPage}
+                className="p-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white"
+              >
+                <FiChevronRight className={language === 'ar' ? 'rotate-180' : ''} />
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

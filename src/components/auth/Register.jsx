@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { authAPI } from '../../services/api'
 import { formatPhoneNumber, validateSaudiPhone } from '../../utils/phoneUtils'
+import { toast } from 'react-hot-toast'
 
 export default function Register({ language, userType }) {
   const [step, setStep] = useState('register') // 'register' or 'otp'
@@ -17,7 +18,7 @@ export default function Register({ language, userType }) {
   const [otp, setOtp] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  
+
   const navigate = useNavigate()
 
   const content = {
@@ -68,7 +69,7 @@ export default function Register({ language, userType }) {
       businessLicense: 'رقم الرخصة التجارية',
       submit: 'إرسال رمز التحقق',
       otpTitle: 'التحقق من الرمز',
-      otpMessage: 'الرجاء إدخال رمز التحقق المرسل إلى هاتفك',
+      otpMessage: 'الر��اء إدخال رمز التحقق المرسل إلى هاتفك',
       otpPlaceholder: 'أدخل رمز التحقق',
       verifyButton: 'تحقق وتسجيل',
       successMessage: 'تم التسجيل بنجاح! جاري التحويل...',
@@ -83,7 +84,7 @@ export default function Register({ language, userType }) {
         phoneInvalid: 'يرجى إدخال رقم هاتف سعودي صحيح',
         addressRequired: 'العنوان مطلوب',
         businessNameRequired: 'اسم الشركة مطلوب للملاك',
-        businessLicenseRequired: '��قم الرخصة التجارية مطلوب للملاك',
+        businessLicenseRequired: 'رقم الرخصة التجارية مطلوب للملاك',
         phoneExists: 'رقم الهاتف مسجل بالفعل'
       },
       placeholders: {
@@ -160,7 +161,7 @@ export default function Register({ language, userType }) {
     setIsLoading(true);
     try {
       const formattedPhone = formatPhoneNumber(formData.phone);
-      
+
       const registrationData = {
         ...formData,
         phone: formattedPhone,
@@ -216,14 +217,17 @@ export default function Register({ language, userType }) {
         // Clean up temporary storage
         localStorage.removeItem('auth_phone');
         localStorage.removeItem('auth_type');
-        
+
         // Store token and user data
         localStorage.setItem('token', response.data.token);
         const userResponse = await authAPI.getUserProfile();
         if (userResponse.success && userResponse.data) {
           localStorage.setItem('user', JSON.stringify(userResponse.data));
         }
-        
+
+        // Show success message
+        toast.success(language === 'ar' ? 'تم التسجيل بنجاح' : 'Registration successful');
+
         // Navigate to appropriate dashboard
         const redirectPath = `/${userType}/profile`;
         navigate(redirectPath);
