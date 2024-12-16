@@ -101,11 +101,11 @@ export default function BookingForm({
         await onSubmit(formData.date, formData.time)
       } else {
         // Create new booking request
-        const formDataToSend = new FormData()
-        formDataToSend.append('unit_id', property.unit_id || property.id)
+        const formDataToSend = new URLSearchParams()
+        formDataToSend.append('unit_id', property.id)
         formDataToSend.append('booking_date', booking_date)
 
-        const response = await bookingAPI.createBookingRequest(formDataToSend)
+        const response = await bookingAPI.createBookingRequest(Object.fromEntries(formDataToSend))
 
         if (!response.success) {
           throw new Error(response.message || 'generic')

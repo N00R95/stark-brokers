@@ -9,7 +9,7 @@ const axiosInstance = axios.create({
     Accept: 'application/json',
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  timeout: 50000,
 })
 
 // Request interceptor
@@ -48,6 +48,6 @@ axiosInstance.interceptors.response.use(
     })
     return Promise.reject(error)
   }
-) 
+)
 
 export default axiosInstance

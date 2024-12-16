@@ -123,44 +123,23 @@ export default function MyProperties({ language }) {
   const content = {
     en: {
       title: 'My Properties',
-      addProperty: 'Add New Property',
-      noProperties: 'No properties listed yet',
-      edit: 'Edit',
-      delete: 'Delete',
-      view: 'View',
-      status: {
-        pending: 'Pending',
-        accepted: 'Accepted',
-        rejected: 'Rejected',
-        booked: 'Booked',
-        available: 'Available'
-      },
+      addProperty: 'Add Property',
+      noProperties: 'No properties found',
       deleteConfirm: 'Are you sure you want to delete this property?',
-      actions: 'Actions',
-      columns: {
-        image: 'Image',
-        title: 'Title',
-        type: 'Type',
-        location: 'Location',
-        price: 'Price',
-        bookingStatus: 'Status'
+      confirmStatusUpdate: 'Are you sure you want to change the status to',
+      status: {
+        available: 'Available',
+        booked: 'Booked'
       },
-      confirmStatusUpdate: 'Are you sure you want to mark this property as',
-      noImage: 'No image available',
-      currency: 'SAR',
       area: 'Area',
       sqm: 'm²',
       bedrooms: 'Bedrooms',
       bathrooms: 'Bathrooms',
-      types: {
-        apartment: 'Apartment',
-        villa: 'Villa',
-        office: 'Office',
-        shop: 'Shop',
-        land: 'Land'
-      },
       features: 'Features',
-      specifications: 'Specifications',
+      currency: 'SAR',
+      columns: {
+        price: 'Price'
+      },
       amenities: {
         'parking': 'Parking',
         'swimming pool': 'Swimming Pool',
@@ -190,44 +169,23 @@ export default function MyProperties({ language }) {
     },
     ar: {
       title: 'عقاراتي',
-      addProperty: 'إضافة عقار جديد',
-      noProperties: 'لا توجد عقارات مضافة',
-      edit: 'تعديل',
-      delete: 'حذف',
-      view: 'عرض',
-      status: {
-        pending: 'قيد المراجعة',
-        accepted: 'مقبول',
-        rejected: 'مرفوض',
-        booked: 'محجوز',
-        available: 'متاح'
-      },
+      addProperty: 'إضافة عقار',
+      noProperties: 'لا توجد عقارات',
       deleteConfirm: 'هل أنت متأكد من حذف هذا العقار؟',
-      actions: 'الإجراءات',
-      columns: {
-        image: 'الصورة',
-        title: 'العنوان',
-        type: 'النوع',
-        location: 'الموقع',
-        price: 'السعر',
-        bookingStatus: 'الحالة'
+      confirmStatusUpdate: 'هل أنت متأكد من تغيير الحالة إلى',
+      status: {
+        available: 'متاح',
+        booked: 'محجوز'
       },
-      confirmStatusUpdate: 'هل أنت متأكد من تغيير حالة العقار إلى',
-      noImage: 'لا توجد صورة',
-      currency: 'ريال',
       area: 'المساحة',
       sqm: 'م²',
       bedrooms: 'غرف النوم',
       bathrooms: 'دورات المياه',
-      types: {
-        apartment: 'شقة',
-        villa: 'فيلا',
-        office: 'مكتب',
-        shop: 'محل',
-        land: 'أرض'
-      },
       features: 'المميزات',
-      specifications: 'المواصفات',
+      currency: 'ريال',
+      columns: {
+        price: 'السعر'
+      },
       amenities: {
         'parking': 'موقف سيارات',
         'swimming pool': 'مسبح',

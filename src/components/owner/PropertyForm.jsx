@@ -112,22 +112,10 @@ export default function PropertyForm({ language }) {
         'mall view': 'Mall View'
       },
       dragDrop: 'Drag and drop images here, or click to select',
-      maxFiles: 'Maximum 10 images',
-      cities: {
-        riyadh: 'Riyadh',
-        jeddah: 'Jeddah',
-        mecca: 'Mecca',
-        medina: 'Medina',
-        dammam: 'Dammam',
-        khobar: 'Khobar',
-        dhahran: 'Dhahran',
-        jubail: 'Jubail',
-        taif: 'Taif',
-        abha: 'Abha'
-      }
+      maxFiles: 'Maximum 10 images'
     },
     ar: {
-      title: id ? 'تعديل لعقار' : 'إضافة عقار جديد',
+      title: id ? 'تعديل العقار' : 'إضافة عقار جديد',
       propertyDetails: 'تفاصيل العقار',
       propertyType: 'نوع العقار',
       location: 'الموقع',
@@ -179,7 +167,7 @@ export default function PropertyForm({ language }) {
         'sea view': 'إطلالة بحرية',
         'city view': 'إطلالة على المدينة',
         'garden view': 'إطلالة على الحديقة',
-        'street view': 'إطلالة على الشا��ع',
+        'street view': 'إطلالة على الشارع',
         'mall view': 'إطلالة على المول'
       },
       amenityOptions: {
@@ -249,6 +237,12 @@ export default function PropertyForm({ language }) {
       }
     } catch (error) {
       console.error('Failed to fetch initial data:', error)
+      setErrors(prev => ({
+        ...prev,
+        submit: language === 'ar'
+          ? 'فشل في تحميل البيانات الأولية'
+          : 'Failed to load initial data'
+      }))
     }
   }
 
@@ -267,13 +261,13 @@ export default function PropertyForm({ language }) {
         }
 
         setFormData({
-          title: propertyData.title,
-          description: propertyData.description,
-          type: propertyData.type,
-          price: propertyData.price,
-          number_bedroom: propertyData.number_bedroom,
-          number_bathroom: propertyData.number_bathroom,
-          area: propertyData.area,
+          title: propertyData.title || '',
+          description: propertyData.description || '',
+          type: propertyData.type || '',
+          price: propertyData.price || '',
+          number_bedroom: propertyData.number_bedroom || '',
+          number_bathroom: propertyData.number_bathroom || '',
+          area: propertyData.area || '',
           city,
           district,
           street,
@@ -281,121 +275,26 @@ export default function PropertyForm({ language }) {
           features: propertyData.features?.map(f => f.id) || [],
           image: propertyData.images?.map(img => img.url) || []
         })
+
+        // Set preview images for existing images
+        setPreviewImages(propertyData.images?.map(img => img.url) || [])
       }
     } catch (error) {
       console.error('Failed to fetch property:', error)
-      setSubmitStatus({
-        success: false,
-        message: language === 'ar' ? 'فشل في تحميل بيانات العقار' : 'Failed to load property data'
-      })
+      setErrors(prev => ({
+        ...prev,
+        submit: language === 'ar'
+          ? 'فشل في تحميل بيانات العقار'
+          : 'Failed to load property data'
+      }))
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrors({});
-    setLoading(true);
-
-    try {
-      // Validate required fields
-      const validationErrors = {};
-
-      if (!id) {
-        if (!formData.title?.trim()) validationErrors.title = 'The title field is required.';
-        if (!formData.price) validationErrors.price = 'The price field is required.';
-        if (!formData.type) validationErrors.type = 'The type field is required.';
-        if (!formData.area) validationErrors.area = 'The area field is required.';
-        if (!formData.city) validationErrors.city = 'City is required.';
-        if (!formData.district) validationErrors.district = 'District is required.';
-        if (!formData.street) validationErrors.street = 'Street name is required.';
-        if (!formData.building_number) validationErrors.building_number = 'Building number is required.';
-        if (!formData.image?.length) validationErrors.image = 'At least one image is required.';
-      }
-
-      if (Object.keys(validationErrors).length > 0) {
-        setErrors(validationErrors);
-        setLoading(false);
-        return;
-      }
-
-      // Combine address fields
-      const fullAddress = [
-        formData.building_number,
-        formData.street,
-        formData.district,
-        formData.city
-      ].filter(Boolean).join(', ');
-
-      // Prepare data with required fields
-      const submitData = {
-        title: formData.title.trim(),
-        description: formData.description?.trim() || '',
-        type: formData.type,
-        price: parseFloat(formData.price),
-        area: parseFloat(formData.area),
-        address: fullAddress,
-        image: formData.image
-      };
-
-      // Only add features if they exist and are not empty
-      if (formData.features && formData.features.length > 0) {
-        submitData.features = formData.features;
-      }
-
-      // Only add bedroom/bathroom if they have valid values (greater than 0)
-      const bedroomValue = parseInt(formData.number_bedroom);
-      if (bedroomValue && bedroomValue > 0) {
-        submitData.number_bedroom = bedroomValue;
-      }
-
-      const bathroomValue = parseInt(formData.number_bathroom);
-      if (bathroomValue && bathroomValue > 0) {
-        submitData.number_bathroom = bathroomValue;
-      }
-
-      // Debug log
-      console.log(`${id ? 'Updating' : 'Creating'} property:`, submitData);
-
-      const response = id
-        ? await propertyAPI.updateProperty(id, submitData)
-        : await propertyAPI.createProperty(submitData);
-
-      if (response.success) {
-        setSubmitStatus({
-          success: true,
-          message: language === 'ar'
-            ? (id ? 'تم تحديث العقار بنجاح' : 'تم إضافة العقار بنجاح')
-            : (id ? 'Property updated successfully' : 'Property added successfully')
-        });
-
-        setTimeout(() => navigate('/owner/properties'), 2000);
-      }
-    } catch (error) {
-      console.error('Form submission error:', error);
-
-      if (error.error) {
-        const apiErrors = {};
-        error.error.forEach(err => {
-          apiErrors[err.field] = err.messages;
-        });
-        setErrors(apiErrors);
-      }
-
-      setSubmitStatus({
-        success: false,
-        message: language === 'ar'
-          ? (id ? 'حدث خطأ أثناء تحديث العقار' : 'حدث خطأ أثناء حفظ العقار')
-          : (id ? 'Failed to update property' : 'Failed to save property')
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files)
+    const maxFileSize = 5 * 1024 * 1024 // 5MB
 
     // Validate file count
     if (files.length + formData.image.length > 10) {
@@ -404,36 +303,49 @@ export default function PropertyForm({ language }) {
         image: language === 'ar'
           ? 'الحد الأقصى 10 صور'
           : 'Maximum 10 images allowed'
-      }));
-      return;
+      }))
+      return
     }
 
-    // Validate file types
-    const validFiles = [];
-    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    const newPreviews = [];
+    // Validate file types and sizes
+    const validFiles = []
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png']
+    const newPreviews = []
+    const invalidFiles = []
 
     for (const file of files) {
       if (!validImageTypes.includes(file.type)) {
-        console.error('Invalid file type:', file.type);
-        continue;
+        invalidFiles.push(`${file.name} (invalid type)`)
+        continue
+      }
+
+      if (file.size > maxFileSize) {
+        invalidFiles.push(`${file.name} (too large, max 5MB)`)
+        continue
       }
 
       // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
-      validFiles.push(file);
-      newPreviews.push(previewUrl);
+      const previewUrl = URL.createObjectURL(file)
+      validFiles.push(file)
+      newPreviews.push(previewUrl)
+    }
+
+    if (invalidFiles.length > 0) {
+      setErrors(prev => ({
+        ...prev,
+        image: `Invalid files: ${invalidFiles.join(', ')}`
+      }))
     }
 
     if (validFiles.length > 0) {
       setFormData(prev => ({
         ...prev,
         image: [...prev.image, ...validFiles]
-      }));
-      setPreviewImages(prev => [...prev, ...newPreviews]);
-      setErrors(prev => ({ ...prev, image: undefined }));
+      }))
+      setPreviewImages(prev => [...prev, ...newPreviews])
+      setErrors(prev => ({ ...prev, image: undefined }))
     }
-  };
+  }
 
   const removeImage = (index) => {
     setFormData(prev => ({
@@ -441,6 +353,122 @@ export default function PropertyForm({ language }) {
       image: prev.image.filter((_, i) => i !== index)
     }))
     setPreviewImages(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setErrors({})
+    setLoading(true)
+
+    try {
+      // Validate required fields
+      const validationErrors = {}
+
+      if (!formData.title?.trim()) validationErrors.title = 'The title field is required.'
+      if (!formData.price) validationErrors.price = 'The price field is required.'
+      if (!formData.type) validationErrors.type = 'The type field is required.'
+      if (!formData.area) validationErrors.area = 'The area field is required.'
+      if (!formData.city) validationErrors.city = 'City is required.'
+      if (!formData.district) validationErrors.district = 'District is required.'
+      if (!formData.street) validationErrors.street = 'Street name is required.'
+      if (!formData.building_number) validationErrors.building_number = 'Building number is required.'
+      if (!id && !formData.image?.length) validationErrors.image = 'At least one image is required.'
+
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors)
+        setLoading(false)
+        return
+      }
+
+      // Combine address fields
+      const fullAddress = [
+        formData.building_number,
+        formData.street,
+        formData.district,
+        formData.city
+      ].filter(Boolean).join(', ')
+
+      // Create FormData instance
+      const submitFormData = new FormData()
+
+      // Add basic fields
+      submitFormData.append('title', formData.title.trim())
+      submitFormData.append('description', formData.description?.trim() || '')
+      submitFormData.append('type', formData.type)
+      submitFormData.append('price', parseFloat(formData.price))
+      submitFormData.append('area', parseFloat(formData.area))
+      submitFormData.append('address', fullAddress)
+
+      // Add features as array
+      if (formData.features && formData.features.length > 0) {
+        formData.features.forEach(featureId => {
+          submitFormData.append('features[]', featureId)
+        })
+      }
+
+      // Add images as array with proper naming
+      if (formData.image && formData.image.length > 0) {
+        formData.image.forEach((image, index) => {
+          if (image instanceof File) {
+            submitFormData.append(`image[${index}]`, image)
+          } else if (typeof image === 'string' && image.startsWith('http')) {
+            // Keep existing image URLs
+            submitFormData.append(`existing_images[]`, image)
+          }
+        })
+      }
+
+      // Add optional fields if they have valid values
+      const bedroomValue = parseInt(formData.number_bedroom)
+      if (bedroomValue && bedroomValue > 0) {
+        submitFormData.append('number_bedroom', bedroomValue)
+      }
+
+      const bathroomValue = parseInt(formData.number_bathroom)
+      if (bathroomValue && bathroomValue > 0) {
+        submitFormData.append('number_bathroom', bathroomValue)
+      }
+
+      const response = id
+        ? await propertyAPI.updateProperty(id, submitFormData)
+        : await propertyAPI.createProperty(submitFormData)
+
+      if (response.success) {
+        setSubmitStatus({
+          success: true,
+          message: language === 'ar'
+            ? (id ? 'تم تحديث العقار بنجاح' : 'تم إضافة العقار بنجاح')
+            : (id ? 'Property updated successfully' : 'Property added successfully')
+        })
+
+        setTimeout(() => navigate('/owner/properties'), 2000)
+      }
+    } catch (error) {
+      console.error('Form submission error:', error)
+
+      if (error.error) {
+        const apiErrors = {}
+        error.error.forEach(err => {
+          apiErrors[err.field] = err.messages
+        })
+        setErrors(apiErrors)
+      } else {
+        setErrors({
+          submit: language === 'ar'
+            ? 'حدث خطأ أثناء حفظ العقار. يرجى المحاولة مرة أخرى.'
+            : 'An error occurred while saving the property. Please try again.'
+        })
+      }
+
+      setSubmitStatus({
+        success: false,
+        message: language === 'ar'
+          ? (id ? 'حدث خطأ أثناء تحديث العقار' : 'حدث خطأ أثناء حفظ العقار')
+          : (id ? 'Failed to update property' : 'Failed to save property')
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const FieldError = ({ error }) => {
@@ -609,7 +637,16 @@ export default function PropertyForm({ language }) {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
               >
                 <option value="">{language === 'ar' ? 'اختر المدينة' : 'Select City'}</option>
-                {Object.entries(t.cities).map(([key, value]) => (
+                {Object.entries(t.cities || {
+                  riyadh: language === 'ar' ? 'الرياض' : 'Riyadh',
+                  jeddah: language === 'ar' ? 'جدة' : 'Jeddah',
+                  dammam: language === 'ar' ? 'الدمام' : 'Dammam',
+                  khobar: language === 'ar' ? 'الخبر' : 'Khobar',
+                  mecca: language === 'ar' ? 'مكة المكرمة' : 'Mecca',
+                  medina: language === 'ar' ? 'المدينة المنورة' : 'Medina',
+                  taif: language === 'ar' ? 'الطائف' : 'Taif',
+                  abha: language === 'ar' ? 'أبها' : 'Abha'
+                }).map(([key, value]) => (
                   <option key={key} value={value}>{value}</option>
                 ))}
               </select>
@@ -755,25 +792,56 @@ export default function PropertyForm({ language }) {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50"
+            className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 flex items-center gap-2"
           >
-            {loading ? '...' : t.submit}
+            {loading ? (
+              <>
+                <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                <span>{language === 'ar' ? 'يرجى الانتظار...' : 'Please wait...'}</span>
+              </>
+            ) : (
+              t.submit
+            )}
           </button>
         </div>
       </form>
 
-      {submitStatus.message && (
-        <div className={`fixed bottom-4 right-4 p-4 rounded-lg ${submitStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+      {/* Status Messages */}
+      {(submitStatus.message || loading) && (
+        <div className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg ${loading ? 'bg-blue-100 text-blue-800' :
+          submitStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
           }`}>
-          {submitStatus.message}
+          <div className="flex items-center gap-3">
+            {loading ? (
+              <>
+                <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-current"></span>
+                <span>{language === 'ar' ? 'جاري المعالجة...' : 'Processing...'}</span>
+              </>
+            ) : (
+              <>
+                <span>{submitStatus.message}</span>
+                {!submitStatus.success && (
+                  <button
+                    onClick={handleSubmit}
+                    className="ml-3 text-sm underline hover:no-underline"
+                  >
+                    {language === 'ar' ? 'حاول مرة أخرى' : 'Try Again'}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
 
       {/* Error Messages */}
       {Object.keys(errors).length > 0 && (
-        <div className="text-red-500 text-sm mt-4">
+        <div className="text-red-500 text-sm mt-4 space-y-1">
           {Object.entries(errors).map(([field, message]) => (
-            <p key={field}>{message}</p>
+            <p key={field} className="flex items-center gap-2">
+              <span>•</span>
+              <span>{message}</span>
+            </p>
           ))}
         </div>
       )}

@@ -38,7 +38,33 @@ const content = {
         apply: 'Apply Filters',
         reset: 'Reset Filters',
         from: 'From',
-        viewDetails: 'View Details'
+        viewDetails: 'View Details',
+        amenities: {
+            'parking': 'Parking',
+            'swimming pool': 'Swimming Pool',
+            'gym': 'Gym',
+            '24/7 security': '24/7 Security',
+            'elevator': 'Elevator',
+            'garden': 'Garden',
+            'central ac': 'Central AC',
+            'balcony': 'Balcony',
+            'maid\'s room': 'Maid\'s Room',
+            'storage room': 'Storage Room',
+            'kitchen appliances': 'Kitchen Appliances',
+            'internet': 'Internet',
+            'satellite/cable tv': 'Satellite/Cable TV',
+            'intercom': 'Intercom',
+            'maintenance': 'Maintenance',
+            'nearby mosque': 'Nearby Mosque',
+            'shopping centers': 'Shopping Centers',
+            'schools nearby': 'Schools Nearby',
+            'pets allowed': 'Pets Allowed',
+            'sea view': 'Sea View',
+            'city view': 'City View',
+            'garden view': 'Garden View',
+            'street view': 'Street View',
+            'mall view': 'Mall View'
+        }
     },
     ar: {
         title: 'العقارات المتاحة',
@@ -69,7 +95,33 @@ const content = {
         apply: 'تطبيق الفلاتر',
         reset: 'إعادة تعيين',
         from: 'من',
-        viewDetails: 'عرض التفاصيل'
+        viewDetails: 'عرض التفاصيل',
+        amenities: {
+            'parking': 'موقف سيارات',
+            'swimming pool': 'مسبح',
+            'gym': 'صالة رياضية',
+            '24/7 security': 'حراسة أمنية 24/7',
+            'elevator': 'مصعد',
+            'garden': 'حديقة',
+            'central ac': 'تكييف مركزي',
+            'balcony': 'شرفة',
+            'maid\'s room': 'غرفة خادمة',
+            'storage room': 'غرفة تخزين',
+            'kitchen appliances': 'أجهزة مطبخ',
+            'internet': 'إنترنت',
+            'satellite/cable tv': 'قنوات فضائية/تلفاز',
+            'intercom': 'اتصال داخلي',
+            'maintenance': 'صيانة',
+            'nearby mosque': 'مسجد قريب',
+            'shopping centers': 'مراكز تسوق قريبة',
+            'schools nearby': 'مدارس قريبة',
+            'pets allowed': 'يسمح بالحيوانات الأليفة',
+            'sea view': 'إطلالة بحرية',
+            'city view': 'إطلالة على المدينة',
+            'garden view': 'إطلالة على الحديقة',
+            'street view': 'إطلالة على الشارع',
+            'mall view': 'إطلالة على المول'
+        }
     }
 };
 
@@ -267,7 +319,7 @@ const PropertyCard = memo(({ property, language, onNavigate }) => {
                                 key={feature.id}
                                 className="text-xs px-2 py-1 bg-gray-50 text-gray-600 rounded-full border border-gray-100"
                             >
-                                {feature.name}
+                                {t.amenities[feature.name.toLowerCase()] || feature.name}
                             </span>
                         ))}
                         {property.features.length > 3 && (

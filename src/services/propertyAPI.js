@@ -57,19 +57,8 @@ const propertyAPI = {
   },
 
   // Create new property/unit
-  createProperty: async (propertyData) => {
+  createProperty: async (formData) => {
     try {
-      const formData = new FormData()
-      Object.keys(propertyData).forEach((key) => {
-        if (key === 'images') {
-          propertyData[key].forEach((image) => {
-            formData.append('images[]', image)
-          })
-        } else if (propertyData[key] !== '') {
-          formData.append(key, propertyData[key])
-        }
-      })
-
       const response = await axiosInstance.post('/units/store', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -243,6 +232,33 @@ const propertyAPI = {
       }
     } catch (error) {
       throw error.response?.data || error
+    }
+  },
+
+  // Update property/unit
+  updateProperty: async (id, formData) => {
+    try {
+      // Remove Content-Type header to let browser set it with boundary for FormData
+      const response = await axiosInstance.post(
+        `/units/update/${id}`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Accept: 'application/json',
+          },
+          // Add timeout specifically for file uploads
+          timeout: 60000, // 60 seconds for file uploads
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error('Update property error:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      })
+      throw error.response?.data || error.message
     }
   },
 }

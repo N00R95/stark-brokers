@@ -6,13 +6,12 @@ const bookingAPI = {
     try {
       // Convert data to URLSearchParams for x-www-form-urlencoded format
       const formData = new URLSearchParams()
-      for (const [key, value] of Object.entries(bookingData)) {
-        formData.append(key, value)
-      }
+      formData.append('unit_id', bookingData.unit_id)
+      formData.append('booking_date', bookingData.booking_date)
 
       const response = await axiosInstance.post(
         '/booking-requests/store',
-        formData,
+        formData.toString(),
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',

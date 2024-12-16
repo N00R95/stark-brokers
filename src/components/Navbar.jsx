@@ -45,9 +45,9 @@ function Navbar({ language, setLanguage }) {
       renter: [
         { text: 'My Profile', path: '/renter/profile' },
         { text: 'My Tours', path: '/renter/tours' },
-        { text: 'My Bookings', path: '/renter/bookings' },
+        // { text: 'My Bookings', path: '/renter/bookings' },
         { text: 'Saved Properties', path: '/renter/saved' },
-        { text: 'Settings', path: '/settings' },
+        // { text: 'Settings', path: '/settings' },
         { text: 'Logout', action: handleLogout }
       ],
       owner: [
@@ -55,7 +55,7 @@ function Navbar({ language, setLanguage }) {
         { text: 'My Properties', path: '/owner/properties' },
         { text: 'Add Property', path: '/owner/properties/add' },
         { text: 'Tour Requests', path: '/owner/requests' },
-        { text: 'Settings', path: '/owner/settings' },
+        // { text: 'Settings', path: '/owner/settings' },
         { text: 'Logout', action: handleLogout }
       ]
     },
@@ -63,9 +63,9 @@ function Navbar({ language, setLanguage }) {
       renter: [
         { text: 'ملفي الشخصي', path: '/renter/profile' },
         { text: 'جولاتي', path: '/renter/tours' },
-        { text: 'حجوزاتي', path: '/renter/bookings' },
+        // { text: 'حجوزاتي', path: '/renter/bookings' },
         { text: 'العقارات المحفوظة', path: '/renter/saved' },
-        { text: 'الإعدادات', path: '/settings' },
+        // { text: 'الإعدادات', path: '/settings' },
         { text: 'تسجيل الخروج', action: handleLogout }
       ],
       owner: [
@@ -73,7 +73,7 @@ function Navbar({ language, setLanguage }) {
         { text: 'عقاراتي', path: '/owner/properties' },
         { text: 'إضافة عقار', path: '/owner/properties/add' },
         { text: 'طلبات الجولات', path: '/owner/requests' },
-        { text: 'الإعدادات', path: '/owner/settings' },
+        // { text: 'الإعدادات', path: '/owner/settings' },
         { text: 'تسجيل الخروج', action: handleLogout }
       ]
     }
@@ -104,21 +104,19 @@ function Navbar({ language, setLanguage }) {
           <div className="flex items-center border rounded-lg overflow-hidden">
             <button
               onClick={() => setLanguage('en')}
-              className={`px-3 py-1 ${
-                language === 'en' 
-                  ? 'bg-primary text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              } transition-colors`}
+              className={`px-3 py-1 ${language === 'en'
+                ? 'bg-primary text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+                } transition-colors`}
             >
               EN
             </button>
             <button
               onClick={() => setLanguage('ar')}
-              className={`px-3 py-1 ${
-                language === 'ar' 
-                  ? 'bg-primary text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              } transition-colors`}
+              className={`px-3 py-1 ${language === 'ar'
+                ? 'bg-primary text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+                } transition-colors`}
             >
               AR
             </button>
@@ -130,11 +128,10 @@ function Navbar({ language, setLanguage }) {
               <Link
                 key={index}
                 to={item.path}
-                className={`flex items-center gap-2 px-4 py-2 transition-colors ${
-                  location.pathname === item.path
-                    ? 'text-primary font-semibold'
-                    : 'text-gray-700 hover:text-primary'
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 transition-colors ${location.pathname === item.path
+                  ? 'text-primary font-semibold'
+                  : 'text-gray-700 hover:text-primary'
+                  }`}
               >
                 {item.icon}
                 <span className={language === 'ar' ? 'font-arabic' : ''}>
@@ -179,7 +176,7 @@ function Navbar({ language, setLanguage }) {
                 >
                   {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
                 </button>
-                
+
                 {/* Login Options Dropdown */}
                 {showLoginOptions && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
@@ -237,11 +234,10 @@ function Navbar({ language, setLanguage }) {
                 <Link
                   key={index}
                   to={item.path}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium ${
-                    location.pathname === item.path
-                      ? 'bg-primary text-white'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium ${location.pathname === item.path
+                    ? 'bg-primary text-white'
+                    : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.icon}
