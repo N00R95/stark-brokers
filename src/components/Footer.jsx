@@ -56,7 +56,7 @@ export default function Footer({ language }) {
           </div>
 
           {/* Social Media Icons - Right */}
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center gap-6">
             {socialLinks.map((social, index) => (
               <a
                 key={index}
